@@ -1,0 +1,64 @@
+version: '3.8'
+
+services:
+  # LocalStack for AWS services simulation
+  localstack:
+    image: localstack/localstack:latest
+    container_name: pathfind-localstack
+    ports:
+      - "4566:4566"  # LocalStack Gateway
+      - "4571:4571"  # Elasticsearch (for CloudWatch Logs)
+    environment:
+      - SERVICES=ecs,ecr,ec2,iam,logs,elbv2,s3
+      - DEBUG=1
+      - DATA_DIR=/tmp/localstack/data
+      - DOCKER_HOST=unix:///var/run/docker.sock
+      - AWS_DEFAULT_REGION=us-east-1
+    volumes:
+      - "./tmp/localstack:/tmp/localstack"
+      - "/var/run/docker.sock:/var/run/docker.sock"
+    networks:
+      - pathfind-network
+
+  # Pathfind application
+  pathfind:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: pathfind-app
+    ports:
+      - "3001:3001"
+    environment:
+      - NODE_ENV=development
+      - PORT=3001
+      - JWT_SECRET=local-sandbox-secret
+      - AWS_ENDPOINT=http://localstack:4566
+      - AWS_ACCESS_KEY_ID=test
+      - AWS_SECRET_ACCESS_KEY=test
+      - AWS_REGION=us-east-1
+    depends_on:
+      - localstack
+    networks:
+      - pathfind-network
+    healthcheck:
+      test: ["CMD", "wget", "--quiet", "--tries=1", "--spider", "http://localhost:3001/"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  # NGINX Load Balancer (simulates ALB)
+  nginx:
+    image: nginx:alpine
+    container_name: pathfind-lb
+    ports:
+      - "80:80"
+    volumes:
+      - ./nginx.sandbox.conf:/etc/nginx/nginx.conf:ro
+    depends_on:
+      - pathfind
+    networks:
+      - pathfind-network
+
+networks:
+  pathfind-network:
+    driver: bridge

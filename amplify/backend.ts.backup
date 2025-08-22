@@ -1,0 +1,15 @@
+import { defineBackend } from '@aws-amplify/backend';
+import { auth } from './auth/resource';
+import { data } from './data/resource';
+import { fetchEventsFunction } from './functions/fetch-events/resource';
+import { storage } from './storage/resource';
+
+/**
+ * Pathfind backend definition
+ */
+const backend = defineBackend({
+  auth,
+  data,
+  storage,
+  fetchEventsFunction,
+});

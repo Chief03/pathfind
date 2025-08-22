@@ -1,0 +1,12 @@
+# Copy this file to terraform.tfvars and fill in your values
+
+aws_region     = "us-east-1"
+environment    = "production"
+app_name       = "pathfind"
+app_port       = 3001
+app_count      = 2
+fargate_cpu    = "256"
+fargate_memory = "512"
+
+# IMPORTANT: Set a strong JWT secret for production
+jwt_secret = "your-very-secure-jwt-secret-change-this-in-production"

@@ -1,0 +1,352 @@
+/* Trip Modals Styles */
+
+/* Join Trip Option on Hero */
+.join-trip-option {
+    margin-top: 24px;
+    text-align: center;
+}
+
+.join-trip-text {
+    font-size: 16px;
+    color: var(--text-secondary);
+    margin: 0;
+}
+
+.join-trip-link {
+    background: none;
+    border: none;
+    color: var(--emerald);
+    font-size: 16px;
+    font-weight: 600;
+    text-decoration: underline;
+    cursor: pointer;
+    padding: 0;
+    transition: color 0.2s ease;
+}
+
+.join-trip-link:hover {
+    color: #234438;
+}
+
+/* Trip Modal Base */
+.trip-modal {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    z-index: 10000;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 20px;
+}
+
+.trip-modal.hidden {
+    display: none;
+}
+
+.trip-modal-backdrop {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(26, 35, 50, 0.7);
+    backdrop-filter: blur(8px);
+}
+
+.trip-modal-content {
+    background: var(--bg-white);
+    border-radius: 16px;
+    width: 100%;
+    max-width: 480px;
+    max-height: 90vh;
+    overflow-y: auto;
+    box-shadow: 0 20px 60px rgba(26, 35, 50, 0.3);
+    position: relative;
+    z-index: 1;
+}
+
+.trip-modal-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 24px;
+    border-bottom: 1px solid var(--border-light);
+}
+
+.trip-modal-header h3 {
+    font-size: 20px;
+    font-weight: 600;
+    color: var(--primary-navy);
+    margin: 0;
+}
+
+.trip-modal-close {
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    background: transparent;
+    border: none;
+    color: var(--text-secondary);
+    font-size: 24px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.2s ease;
+}
+
+.trip-modal-close:hover {
+    background: var(--bg-light);
+    color: var(--primary-navy);
+}
+
+.trip-modal-body {
+    padding: 24px;
+}
+
+/* Trip Created Success Modal */
+.trip-success-info {
+    text-align: center;
+}
+
+.trip-icon {
+    font-size: 48px;
+    margin-bottom: 16px;
+}
+
+.trip-success-info p {
+    font-size: 16px;
+    color: var(--text-secondary);
+    margin: 0 0 24px 0;
+    line-height: 1.5;
+}
+
+.trip-code-display {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 16px;
+    background: var(--bg-light);
+    border: 2px solid var(--accent-gold);
+    border-radius: 12px;
+    margin-bottom: 24px;
+}
+
+.trip-code {
+    flex: 1;
+    font-size: 20px;
+    font-weight: 700;
+    font-family: 'Courier New', monospace;
+    color: var(--primary-navy);
+    letter-spacing: 2px;
+    text-align: center;
+}
+
+.copy-code-btn {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 8px 16px;
+    background: var(--emerald);
+    color: white;
+    border: none;
+    border-radius: 8px;
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    white-space: nowrap;
+}
+
+.copy-code-btn:hover {
+    background: #234438;
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(42, 82, 66, 0.3);
+}
+
+.copy-code-btn.copied {
+    background: #28a745;
+}
+
+.primary-trip-btn {
+    width: 100%;
+    padding: 14px 24px;
+    background: var(--emerald);
+    color: white;
+    border: none;
+    border-radius: 8px;
+    font-size: 16px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    position: relative;
+    overflow: hidden;
+}
+
+.primary-trip-btn:hover {
+    background: #234438;
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(42, 82, 66, 0.3);
+}
+
+.primary-trip-btn:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+    transform: none;
+    box-shadow: none;
+}
+
+/* Join Trip Form */
+.form-group {
+    margin-bottom: 20px;
+}
+
+.form-group label {
+    display: block;
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--text-primary);
+    margin-bottom: 8px;
+}
+
+.trip-code-input {
+    width: 100%;
+    padding: 12px 16px;
+    border: 2px solid var(--border-medium);
+    border-radius: 8px;
+    font-size: 16px;
+    font-family: 'Courier New', monospace;
+    font-weight: 600;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+    color: var(--text-primary);
+    background: var(--bg-white);
+    transition: all 0.2s ease;
+}
+
+.trip-code-input:focus {
+    outline: none;
+    border-color: var(--accent-gold);
+    box-shadow: 0 0 0 3px rgba(212, 175, 55, 0.1);
+}
+
+.trip-code-input.error {
+    border-color: #dc3545;
+    box-shadow: 0 0 0 3px rgba(220, 53, 69, 0.1);
+}
+
+.trip-code-input.success {
+    border-color: var(--emerald);
+    box-shadow: 0 0 0 3px rgba(42, 82, 66, 0.1);
+}
+
+.error-message {
+    margin-top: 8px;
+    font-size: 14px;
+    color: #dc3545;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.error-message:before {
+    content: "⚠";
+    font-size: 16px;
+}
+
+.success-message {
+    margin-top: 8px;
+    font-size: 14px;
+    color: var(--emerald);
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.success-message:before {
+    content: "✓";
+    font-size: 16px;
+}
+
+.form-actions {
+    display: flex;
+    gap: 12px;
+    justify-content: flex-end;
+    margin-top: 24px;
+}
+
+.secondary-trip-btn {
+    padding: 12px 20px;
+    background: var(--bg-light);
+    color: var(--text-primary);
+    border: 1px solid var(--border-light);
+    border-radius: 8px;
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.secondary-trip-btn:hover {
+    background: var(--border-light);
+    border-color: var(--accent-gold);
+}
+
+/* Loading States */
+.btn-loading {
+    display: none;
+}
+
+.primary-trip-btn.loading .btn-text {
+    display: none;
+}
+
+.primary-trip-btn.loading .btn-loading {
+    display: inline;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+    .trip-modal-content {
+        margin: 10px;
+        max-width: none;
+    }
+    
+    .trip-code-display {
+        flex-direction: column;
+        text-align: center;
+    }
+    
+    .copy-code-btn {
+        width: 100%;
+        justify-content: center;
+    }
+    
+    .form-actions {
+        flex-direction: column;
+    }
+    
+    .secondary-trip-btn,
+    .primary-trip-btn {
+        width: 100%;
+    }
+}
+
+/* Animations */
+@keyframes modalSlideIn {
+    from {
+        opacity: 0;
+        transform: scale(0.9) translateY(-20px);
+    }
+    to {
+        opacity: 1;
+        transform: scale(1) translateY(0);
+    }
+}
+
+.trip-modal:not(.hidden) .trip-modal-content {
+    animation: modalSlideIn 0.3s ease;
+}

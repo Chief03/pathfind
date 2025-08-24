@@ -16,7 +16,7 @@
 .activities-header h4 {
     font-size: 18px;
     font-weight: 600;
-    color: var(--primary-navy);
+    color: var(--primary-deep-purple);
     margin: 0;
 }
 
@@ -36,8 +36,8 @@
 
 .refresh-btn:hover {
     background: var(--bg-light);
-    border-color: var(--accent-gold);
-    color: var(--primary-navy);
+    border-color: var(--accent-pink);
+    color: var(--primary-deep-purple);
 }
 
 .refresh-btn.spinning {
@@ -63,7 +63,7 @@
 
 .find-btn {
     padding: 10px 24px;
-    background: var(--emerald);
+    background: var(--violet);
     color: white;
     border: none;
     border-radius: 8px;
@@ -121,13 +121,13 @@
 }
 
 .activity-card:hover {
-    border-color: var(--accent-gold);
+    border-color: var(--accent-pink);
     transform: translateY(-2px);
     box-shadow: 0 4px 12px rgba(26, 35, 50, 0.15);
 }
 
 .activity-card:focus {
-    outline: 2px solid var(--accent-gold);
+    outline: 2px solid var(--accent-pink);
     outline-offset: 2px;
 }
 
@@ -172,34 +172,34 @@
 /* Category colors */
 .activity-category.landmark {
     background: rgba(212, 175, 55, 0.2);
-    color: var(--accent-gold);
+    color: var(--accent-pink);
 }
 
 .activity-category.museum {
     background: rgba(124, 143, 160, 0.2);
-    color: var(--dusty-blue);
+    color: var(--indigo);
 }
 
 .activity-category.sports {
     background: rgba(42, 82, 66, 0.2);
-    color: var(--emerald);
+    color: var(--violet);
 }
 
 .activity-category.concert {
     background: rgba(107, 39, 55, 0.2);
-    color: var(--oxblood);
+    color: var(--hot-pink);
 }
 
 .activity-category.attraction {
     background: rgba(135, 160, 142, 0.2);
-    color: var(--sage);
+    color: var(--medium-purple);
 }
 
 .activity-add-btn {
     width: 32px;
     height: 32px;
     border-radius: 50%;
-    background: var(--emerald);
+    background: var(--violet);
     border: none;
     color: white;
     cursor: pointer;
@@ -216,14 +216,14 @@
 
 .activity-add-btn.added {
     background: var(--bg-light);
-    color: var(--emerald);
+    color: var(--violet);
     pointer-events: none;
 }
 
 .activity-title {
     font-size: 16px;
     font-weight: 600;
-    color: var(--primary-navy);
+    color: var(--primary-deep-purple);
     margin: 0 0 4px 0;
     display: -webkit-box;
     -webkit-line-clamp: 2;
@@ -258,7 +258,7 @@
 .activity-price {
     font-size: 14px;
     font-weight: 600;
-    color: var(--emerald);
+    color: var(--violet);
 }
 
 .activity-price.free {
@@ -274,7 +274,7 @@
 }
 
 .activity-rating .star {
-    color: var(--accent-gold);
+    color: var(--accent-pink);
 }
 
 .activity-source {
@@ -285,7 +285,7 @@
 }
 
 .activity-source:hover {
-    color: var(--accent-gold);
+    color: var(--accent-pink);
 }
 
 /* Top Picks Section */
@@ -303,14 +303,14 @@
 .top-picks-header h5 {
     font-size: 16px;
     font-weight: 600;
-    color: var(--primary-navy);
+    color: var(--primary-deep-purple);
     margin: 0;
 }
 
 .top-picks-badge {
     padding: 2px 8px;
-    background: var(--accent-gold);
-    color: var(--primary-navy);
+    background: var(--accent-pink);
+    color: var(--primary-deep-purple);
     font-size: 10px;
     font-weight: 600;
     text-transform: uppercase;

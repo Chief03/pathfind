@@ -28,11 +28,18 @@
         setupAutocomplete('hero-destination', {
             placeholder: 'Search destinations',
             types: 'city,country',
+            debounceDelay: 150, // Faster response
+            maxResults: 10, // More results
             onSelect: (place) => {
                 console.log('[LocationInputs] Hero destination selected:', place);
                 // Store selected place data
                 if (typeof sessionStorage !== 'undefined') {
                     sessionStorage.setItem('selectedDestination', JSON.stringify(place));
+                }
+                // Focus on next field (dates)
+                const datesField = document.getElementById('hero-dates');
+                if (datesField) {
+                    setTimeout(() => datesField.click(), 100);
                 }
             }
         });

@@ -15,7 +15,7 @@
 .itinerary-header h3 {
     font-size: 24px;
     font-weight: 600;
-    color: var(--primary-navy);
+    color: var(--primary-deep-purple);
     margin: 0;
 }
 
@@ -24,7 +24,7 @@
     align-items: center;
     gap: 8px;
     padding: 10px 20px;
-    background: var(--emerald);
+    background: var(--violet);
     color: white;
     border: none;
     border-radius: 8px;
@@ -78,7 +78,7 @@
 }
 
 .event-card:hover {
-    border-color: var(--accent-gold);
+    border-color: var(--accent-pink);
     transform: translateY(-4px);
     box-shadow: 0 8px 24px rgba(26, 35, 50, 0.15);
 }
@@ -125,7 +125,7 @@
 }
 
 .event-card.drag-over {
-    border-color: var(--emerald);
+    border-color: var(--violet);
     background: var(--bg-offwhite);
 }
 
@@ -189,7 +189,7 @@
 .card-date {
     font-size: 12px;
     font-weight: 600;
-    color: var(--accent-gold);
+    color: var(--accent-pink);
     text-transform: uppercase;
     letter-spacing: 0.5px;
 }
@@ -197,7 +197,7 @@
 .card-hour {
     font-size: 18px;
     font-weight: 600;
-    color: var(--primary-navy);
+    color: var(--primary-deep-purple);
 }
 
 /* Suggestions Section */
@@ -211,7 +211,7 @@
 .suggestions-section h4 {
     font-size: 18px;
     font-weight: 600;
-    color: var(--primary-navy);
+    color: var(--primary-deep-purple);
     margin: 0 0 20px 0;
 }
 
@@ -235,7 +235,7 @@
 }
 
 .suggestion-card:hover {
-    border-color: var(--emerald);
+    border-color: var(--violet);
     border-style: solid;
     transform: translateY(-2px);
     box-shadow: 0 4px 12px rgba(42, 82, 66, 0.15);
@@ -248,7 +248,7 @@
     width: 28px;
     height: 28px;
     border-radius: 50%;
-    background: var(--emerald);
+    background: var(--violet);
     border: none;
     color: white;
     cursor: pointer;
@@ -266,7 +266,7 @@
 .suggestion-title {
     font-size: 14px;
     font-weight: 600;
-    color: var(--primary-navy);
+    color: var(--primary-deep-purple);
     margin-bottom: 8px;
 }
 
@@ -278,7 +278,7 @@
 
 .suggestion-price {
     font-size: 14px;
-    color: var(--emerald);
+    color: var(--violet);
     font-weight: 600;
 }
 
@@ -286,7 +286,7 @@
 .card-location {
     font-size: 16px;
     font-weight: 600;
-    color: var(--primary-navy);
+    color: var(--primary-deep-purple);
     margin-bottom: 12px;
     display: -webkit-box;
     -webkit-line-clamp: 2;
@@ -318,7 +318,7 @@
     gap: 4px;
     font-size: 16px;
     font-weight: 600;
-    color: var(--emerald);
+    color: var(--violet);
 }
 
 .card-price.free {
@@ -334,7 +334,7 @@
 .drag-placeholder {
     width: 280px;
     height: 200px;
-    border: 2px dashed var(--accent-gold);
+    border: 2px dashed var(--accent-pink);
     border-radius: 12px;
     background: rgba(212, 175, 55, 0.1);
     flex-shrink: 0;
@@ -348,6 +348,7 @@
     right: 0;
     bottom: 0;
     background: rgba(26, 35, 50, 0.7);
+    -webkit-backdrop-filter: blur(8px);
     backdrop-filter: blur(8px);
     z-index: 10000;
     display: flex;
@@ -381,7 +382,7 @@
 .card-modal-header h3 {
     font-size: 20px;
     font-weight: 600;
-    color: var(--primary-navy);
+    color: var(--primary-deep-purple);
     margin: 0;
 }
 
@@ -402,7 +403,7 @@
 
 .card-modal-close:hover {
     background: var(--bg-light);
-    color: var(--primary-navy);
+    color: var(--primary-deep-purple);
 }
 
 #card-form {
@@ -442,7 +443,7 @@
 #card-form input:focus,
 #card-form textarea:focus {
     outline: none;
-    border-color: var(--accent-gold);
+    border-color: var(--accent-pink);
     box-shadow: 0 0 0 3px rgba(212, 175, 55, 0.1);
 }
 
@@ -480,7 +481,7 @@
 }
 
 .btn-save {
-    background: var(--emerald);
+    background: var(--violet);
     color: white;
 }
 

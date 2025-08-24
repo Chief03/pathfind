@@ -1,0 +1,181 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Interactive Features Test</title>
+    <link rel="stylesheet" href="styles.css">
+    <link rel="stylesheet" href="interactive-styles.css">
+    <style>
+        body {
+            padding: 20px;
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+        
+        .test-section {
+            margin: 40px 0;
+            padding: 20px;
+            border: 2px solid var(--border);
+            border-radius: 12px;
+        }
+        
+        .test-title {
+            font-size: 20px;
+            font-weight: bold;
+            margin-bottom: 20px;
+            color: var(--primary);
+        }
+        
+        .test-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 20px;
+        }
+        
+        .test-card {
+            padding: 20px;
+            background: var(--surface);
+            border-radius: 8px;
+            cursor: pointer;
+        }
+    </style>
+</head>
+<body>
+    <h1>Interactive Features Test Page</h1>
+    
+    <div class="test-section">
+        <div class="test-title">🎯 Button Interactions</div>
+        <div class="test-grid">
+            <button class="btn-primary">Primary Button</button>
+            <button class="btn-secondary">Secondary Button</button>
+            <button class="btn-interactive">Interactive Button</button>
+            <button class="pulse">Pulsing Button</button>
+        </div>
+    </div>
+    
+    <div class="test-section">
+        <div class="test-title">🎉 Celebration Effects</div>
+        <button onclick="window.createConfetti && window.createConfetti()">Launch Confetti!</button>
+        <button onclick="window.playSound && window.playSound('success')">Play Success Sound</button>
+        <button onclick="window.showNotification && window.showNotification('Test Alert', 'This is a test notification!')">Show Notification</button>
+    </div>
+    
+    <div class="test-section">
+        <div class="test-title">📝 Form Interactions</div>
+        <div class="form-group">
+            <label for="test-input">Test Input</label>
+            <input type="text" id="test-input" placeholder="Type something...">
+        </div>
+        <div class="form-group">
+            <label for="test-textarea">Test Textarea</label>
+            <textarea id="test-textarea" maxlength="200" placeholder="Write a message..."></textarea>
+        </div>
+    </div>
+    
+    <div class="test-section">
+        <div class="test-title">✅ Progress Checkboxes</div>
+        <div class="checklist">
+            <div class="checklist-item">
+                <input type="checkbox" class="progress-checkbox" id="test-check-1">
+                <label for="test-check-1">Task 1: Click me</label>
+            </div>
+            <div class="checklist-item">
+                <input type="checkbox" class="progress-checkbox" id="test-check-2">
+                <label for="test-check-2">Task 2: Click me too</label>
+            </div>
+            <div class="checklist-item">
+                <input type="checkbox" class="progress-checkbox" id="test-check-3">
+                <label for="test-check-3">Task 3: Complete all for confetti!</label>
+            </div>
+        </div>
+    </div>
+    
+    <div class="test-section">
+        <div class="test-title">🎨 Card Animations</div>
+        <div class="test-grid">
+            <div class="test-card animate-card">Animated Card 1</div>
+            <div class="test-card animate-card">Animated Card 2</div>
+            <div class="test-card animate-card">Animated Card 3</div>
+            <div class="test-card card-interactive">Interactive Card</div>
+        </div>
+    </div>
+    
+    <div class="test-section">
+        <div class="test-title">🔄 Loading States</div>
+        <button onclick="testLoading(this)">Click for Loading</button>
+        <div class="skeleton" style="margin-top: 10px;"></div>
+        <div class="loading-dots" style="margin-top: 10px;">
+            <span></span>
+            <span></span>
+            <span></span>
+        </div>
+    </div>
+    
+    <div class="test-section">
+        <div class="test-title">⌨️ Keyboard Shortcuts</div>
+        <p>Try these shortcuts:</p>
+        <ul>
+            <li>Ctrl+/ - Show shortcuts help</li>
+            <li>Ctrl+N - New event</li>
+            <li>Ctrl+F - Add flight</li>
+            <li>Ctrl+S - Add stay</li>
+            <li>ESC - Close modals</li>
+        </ul>
+    </div>
+    
+    <div class="test-section">
+        <div class="test-title">🎬 Animation Effects</div>
+        <button class="bounce">Bounce Effect</button>
+        <button class="shake" onclick="this.classList.add('shake'); setTimeout(() => this.classList.remove('shake'), 500)">Shake Effect</button>
+        <button class="glow">Glow Effect</button>
+    </div>
+    
+    <div class="test-section">
+        <div class="test-title">📋 Tooltips</div>
+        <p>Hover over these elements:</p>
+        <button class="has-tooltip" data-tooltip="This is a helpful tooltip!">Hover for Tooltip</button>
+        <button class="copy-code-btn has-tooltip" data-tooltip="Copy to clipboard">📋 Copy</button>
+    </div>
+    
+    <div class="test-section">
+        <div class="test-title">🎯 Drag and Drop</div>
+        <div id="cards-container">
+            <div class="card" style="padding: 20px; margin: 10px 0; background: var(--surface); border-radius: 8px;">
+                Card 1 - Drag me!
+            </div>
+            <div class="card" style="padding: 20px; margin: 10px 0; background: var(--surface); border-radius: 8px;">
+                Card 2 - Drag me!
+            </div>
+            <div class="card" style="padding: 20px; margin: 10px 0; background: var(--surface); border-radius: 8px;">
+                Card 3 - Drag me!
+            </div>
+        </div>
+    </div>
+    
+    <script src="interactions.js"></script>
+    <script src="enhanced-interactions.js"></script>
+    <script>
+        function testLoading(button) {
+            const originalText = button.textContent;
+            button.innerHTML = '<span class="loading-dots"><span></span><span></span><span></span></span>';
+            button.disabled = true;
+            
+            setTimeout(() => {
+                button.textContent = originalText;
+                button.disabled = false;
+                if (window.showNotification) {
+                    window.showNotification('✅ Success', 'Loading completed!');
+                }
+            }, 2000);
+        }
+        
+        // Test scroll indicator
+        for (let i = 0; i < 10; i++) {
+            const spacer = document.createElement('div');
+            spacer.style.height = '100px';
+            document.body.appendChild(spacer);
+        }
+    </script>
+</body>
+</html>

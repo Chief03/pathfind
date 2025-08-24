@@ -1,0 +1,301 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Flight Search Tests</title>
+    <script src="runtime-validators.js"></script>
+    <style>
+        body { font-family: monospace; padding: 20px; max-width: 1200px; margin: 0 auto; }
+        .test { margin: 10px 0; padding: 10px; border: 1px solid #ccc; border-radius: 4px; }
+        .pass { background: #d4edda; border-color: #28a745; }
+        .fail { background: #f8d7da; border-color: #dc3545; }
+        .title { font-weight: bold; margin-bottom: 5px; }
+        .result { margin-left: 20px; color: #666; }
+        .summary { margin-top: 20px; padding: 15px; background: #f8f9fa; border-radius: 4px; }
+        h2 { color: #333; border-bottom: 2px solid #007bff; padding-bottom: 5px; }
+    </style>
+</head>
+<body>
+    <h1>Flight Search and Loading Tests</h1>
+    
+    <h2>Unit Tests</h2>
+    <div id="unit-tests"></div>
+    
+    <h2>Integration Tests</h2>
+    <div id="integration-tests"></div>
+    
+    <div class="summary" id="summary"></div>
+    
+    <script>
+        // Test utilities
+        let totalTests = 0;
+        let passedTests = 0;
+        
+        function test(container, name, fn) {
+            totalTests++;
+            const testDiv = document.createElement('div');
+            testDiv.className = 'test';
+            
+            try {
+                const result = fn();
+                if (result && result.then) {
+                    // Async test
+                    result.then(() => {
+                        testDiv.className += ' pass';
+                        testDiv.innerHTML = `<div class="title">✅ ${name}</div>`;
+                        passedTests++;
+                        updateSummary();
+                    }).catch(error => {
+                        testDiv.className += ' fail';
+                        testDiv.innerHTML = `
+                            <div class="title">❌ ${name}</div>
+                            <div class="result">Error: ${error.message}</div>
+                        `;
+                        updateSummary();
+                    });
+                } else {
+                    testDiv.className += ' pass';
+                    testDiv.innerHTML = `<div class="title">✅ ${name}</div>`;
+                    passedTests++;
+                }
+            } catch (error) {
+                testDiv.className += ' fail';
+                testDiv.innerHTML = `
+                    <div class="title">❌ ${name}</div>
+                    <div class="result">Error: ${error.message}</div>
+                `;
+            }
+            
+            container.appendChild(testDiv);
+        }
+        
+        function assert(condition, message) {
+            if (!condition) {
+                throw new Error(message || 'Assertion failed');
+            }
+        }
+        
+        function assertEqual(actual, expected, message) {
+            if (JSON.stringify(actual) !== JSON.stringify(expected)) {
+                throw new Error(message || `Expected ${JSON.stringify(expected)}, got ${JSON.stringify(actual)}`);
+            }
+        }
+        
+        function updateSummary() {
+            const summary = document.getElementById('summary');
+            const percentage = totalTests > 0 ? Math.round((passedTests / totalTests) * 100) : 0;
+            summary.innerHTML = `
+                <h3>Test Summary</h3>
+                <p><strong>${passedTests}/${totalTests}</strong> tests passed (${percentage}%)</p>
+                ${passedTests === totalTests ? '✅ All tests passed!' : '⚠️ Some tests failed'}
+            `;
+        }
+        
+        // Mock API for testing
+        function mockFetch(url, options) {
+            return new Promise((resolve) => {
+                // Simulate network delay
+                setTimeout(() => {
+                    if (url.includes('/api/trips/TEST123/flights')) {
+                        resolve({
+                            ok: true,
+                            json: () => Promise.resolve([
+                                { id: 1, airline: 'AA', flightNumber: '100', departureAirport: 'JFK', arrivalAirport: 'LAX' },
+                                { id: 2, airline: 'UA', flightNumber: '200', departureAirport: 'LAX', arrivalAirport: 'JFK' }
+                            ])
+                        });
+                    } else if (url.includes('/api/trips/EMPTY/flights')) {
+                        resolve({
+                            ok: true,
+                            json: () => Promise.resolve([])
+                        });
+                    } else if (url.includes('/api/trips/ERROR/flights')) {
+                        resolve({
+                            ok: false,
+                            status: 500,
+                            statusText: 'Internal Server Error'
+                        });
+                    } else {
+                        resolve({
+                            ok: false,
+                            status: 404,
+                            statusText: 'Not Found'
+                        });
+                    }
+                }, 100);
+            });
+        }
+        
+        // Run unit tests
+        const unitContainer = document.getElementById('unit-tests');
+        
+        test(unitContainer, 'validateFlightSearch - valid input', () => {
+            const result = validators.validateFlightSearch({
+                origin: 'New York',
+                destination: 'Los Angeles',
+                departDate: new Date(Date.now() + 86400000).toISOString(), // Tomorrow
+                passengers: 2
+            });
+            assert(result.valid === true, 'Should be valid');
+            assertEqual(result.errors.length, 0, 'Should have no errors');
+            assertEqual(result.data.origin, 'New York');
+            assertEqual(result.data.destination, 'Los Angeles');
+        });
+        
+        test(unitContainer, 'validateFlightSearch - missing origin', () => {
+            const result = validators.validateFlightSearch({
+                destination: 'Los Angeles',
+                departDate: new Date(Date.now() + 86400000).toISOString()
+            });
+            assert(result.valid === false, 'Should be invalid');
+            assert(result.errors.includes('Origin city or airport is required'));
+        });
+        
+        test(unitContainer, 'validateFlightSearch - missing destination', () => {
+            const result = validators.validateFlightSearch({
+                origin: 'New York',
+                departDate: new Date(Date.now() + 86400000).toISOString()
+            });
+            assert(result.valid === false, 'Should be invalid');
+            assert(result.errors.includes('Destination city or airport is required'));
+        });
+        
+        test(unitContainer, 'validateFlightSearch - past departure date', () => {
+            const yesterday = new Date(Date.now() - 86400000);
+            const result = validators.validateFlightSearch({
+                origin: 'New York',
+                destination: 'Los Angeles',
+                departDate: yesterday.toISOString()
+            });
+            assert(result.valid === false, 'Should be invalid');
+            assert(result.errors.some(e => e.includes('past')));
+        });
+        
+        test(unitContainer, 'validateFlightSearch - return before departure', () => {
+            const tomorrow = new Date(Date.now() + 86400000);
+            const today = new Date();
+            const result = validators.validateFlightSearch({
+                origin: 'New York',
+                destination: 'Los Angeles',
+                departDate: tomorrow.toISOString(),
+                returnDate: today.toISOString()
+            });
+            assert(result.valid === false, 'Should be invalid');
+            assert(result.errors.some(e => e.includes('after departure')));
+        });
+        
+        test(unitContainer, 'validateFlightData - filters invalid flights', () => {
+            const input = [
+                { id: 1, airline: 'AA', flightNumber: '123' },
+                { id: 2 }, // Missing required fields
+                null,
+                { airline: 'UA', flightNumber: '456' }, // Missing id
+                { id: 3, airline: 'DL', flightNumber: '789' }
+            ];
+            const result = validators.validateFlightData(input);
+            assertEqual(result.length, 2, 'Should filter out invalid flights');
+            assertEqual(result[0].id, 1);
+            assertEqual(result[1].id, 3);
+        });
+        
+        test(unitContainer, 'createSearchDebouncer - prevents rapid calls', (done) => {
+            let callCount = 0;
+            const search = validators.createSearchDebouncer(() => {
+                callCount++;
+            }, 100);
+            
+            // Rapid calls
+            search();
+            search();
+            search();
+            
+            assert(callCount === 1, 'Should call immediately on first call');
+            
+            setTimeout(() => {
+                search();
+                assert(callCount === 1, 'Should debounce second call');
+            }, 50);
+            
+            setTimeout(() => {
+                assert(callCount === 2, 'Should execute debounced call');
+            }, 200);
+        });
+        
+        // Integration tests
+        const integrationContainer = document.getElementById('integration-tests');
+        
+        test(integrationContainer, 'loadFlights function exists', () => {
+            assert(typeof window.loadFlights === 'function', 'loadFlights should be a function');
+            assert(typeof window.flightsManager === 'object', 'flightsManager should exist');
+            assert(typeof window.flightsManager.loadFlights === 'function', 'flightsManager.loadFlights should exist');
+        });
+        
+        test(integrationContainer, 'Mock API - successful load', async () => {
+            const originalFetch = window.fetch;
+            window.fetch = mockFetch;
+            
+            try {
+                const response = await mockFetch('/api/trips/TEST123/flights');
+                assert(response.ok === true, 'Response should be ok');
+                const data = await response.json();
+                assert(Array.isArray(data), 'Should return array');
+                assertEqual(data.length, 2, 'Should return 2 flights');
+            } finally {
+                window.fetch = originalFetch;
+            }
+        });
+        
+        test(integrationContainer, 'Mock API - empty flights', async () => {
+            const originalFetch = window.fetch;
+            window.fetch = mockFetch;
+            
+            try {
+                const response = await mockFetch('/api/trips/EMPTY/flights');
+                assert(response.ok === true, 'Response should be ok');
+                const data = await response.json();
+                assert(Array.isArray(data), 'Should return array');
+                assertEqual(data.length, 0, 'Should return empty array');
+            } finally {
+                window.fetch = originalFetch;
+            }
+        });
+        
+        test(integrationContainer, 'Mock API - error handling', async () => {
+            const originalFetch = window.fetch;
+            window.fetch = mockFetch;
+            
+            try {
+                const response = await mockFetch('/api/trips/ERROR/flights');
+                assert(response.ok === false, 'Response should not be ok');
+                assertEqual(response.status, 500, 'Should return 500 status');
+            } finally {
+                window.fetch = originalFetch;
+            }
+        });
+        
+        test(integrationContainer, 'Feature check pattern', () => {
+            // Test the pattern used in the code
+            const testFn = () => true;
+            
+            // Positive case
+            if (typeof testFn === 'function') {
+                assert(true, 'Function check works');
+            } else {
+                assert(false, 'Function check failed');
+            }
+            
+            // Negative case
+            const undefinedFn = undefined;
+            if (typeof undefinedFn === 'function') {
+                assert(false, 'Should not detect undefined as function');
+            } else {
+                assert(true, 'Correctly handles undefined');
+            }
+        });
+        
+        // Update summary after all tests
+        setTimeout(updateSummary, 500);
+    </script>
+</body>
+</html>

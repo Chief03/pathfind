@@ -45,8 +45,12 @@ function generateTripCode() {
 
 // Middleware
 app.use(express.static('public'));
+app.use(express.static('models')); // Serve model files
 app.use(express.json());
 app.use(cookieParser());
+
+// Store io instance for use in routes
+app.locals.io = io;
 
 // Auth middleware
 function authenticateToken(req, res, next) {
@@ -66,10 +70,21 @@ function authenticateToken(req, res, next) {
     });
 }
 
+// Import flight routes
+const flightRoutes = require('./routes/flights.routes');
+
 // Routes
 app.get('/', (req, res) => {
     res.sendFile(path.join(__dirname, 'public', 'index.html'));
 });
+
+// Explicit route for test file (fallback if static serving fails)
+app.get('/test-flights-enhanced.html', (req, res) => {
+    res.sendFile(path.join(__dirname, 'public', 'test-flights-enhanced.html'));
+});
+
+// API Routes
+app.use('/api', flightRoutes);
 
 // Auth routes
 app.post('/api/auth/signup', async (req, res) => {

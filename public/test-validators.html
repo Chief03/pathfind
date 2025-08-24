@@ -1,0 +1,224 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Validator Tests</title>
+    <script src="runtime-validators.js"></script>
+    <style>
+        body { font-family: monospace; padding: 20px; }
+        .test { margin: 10px 0; padding: 10px; border: 1px solid #ccc; }
+        .pass { background: #d4edda; border-color: #28a745; }
+        .fail { background: #f8d7da; border-color: #dc3545; }
+        .title { font-weight: bold; margin-bottom: 5px; }
+        .result { margin-left: 20px; }
+    </style>
+</head>
+<body>
+    <h1>Runtime Validator Unit Tests</h1>
+    <div id="test-results"></div>
+    
+    <script>
+        const results = document.getElementById('test-results');
+        let testCount = 0;
+        let passCount = 0;
+        
+        function test(name, fn) {
+            testCount++;
+            const testDiv = document.createElement('div');
+            testDiv.className = 'test';
+            
+            try {
+                fn();
+                testDiv.className += ' pass';
+                testDiv.innerHTML = `<div class="title">✅ ${name}</div>`;
+                passCount++;
+            } catch (error) {
+                testDiv.className += ' fail';
+                testDiv.innerHTML = `
+                    <div class="title">❌ ${name}</div>
+                    <div class="result">Error: ${error.message}</div>
+                `;
+            }
+            
+            results.appendChild(testDiv);
+        }
+        
+        function assert(condition, message) {
+            if (!condition) {
+                throw new Error(message || 'Assertion failed');
+            }
+        }
+        
+        function assertEqual(actual, expected, message) {
+            if (JSON.stringify(actual) !== JSON.stringify(expected)) {
+                throw new Error(message || `Expected ${JSON.stringify(expected)}, got ${JSON.stringify(actual)}`);
+            }
+        }
+        
+        // Run tests
+        test('validateFlightData - handles null', () => {
+            const result = validators.validateFlightData(null);
+            assert(Array.isArray(result), 'Should return array');
+            assertEqual(result.length, 0, 'Should return empty array');
+        });
+        
+        test('validateFlightData - handles non-array', () => {
+            const result = validators.validateFlightData('not an array');
+            assert(Array.isArray(result), 'Should return array');
+            assertEqual(result.length, 0, 'Should return empty array');
+        });
+        
+        test('validateFlightData - filters invalid flights', () => {
+            const input = [
+                { id: 1, airline: 'AA', flightNumber: '123' },
+                { id: 2 }, // Missing required fields
+                null,
+                { airline: 'UA', flightNumber: '456' }, // Missing id
+                { id: 3, airline: 'DL', flightNumber: '789' }
+            ];
+            const result = validators.validateFlightData(input);
+            assertEqual(result.length, 2, 'Should filter out invalid flights');
+            assertEqual(result[0].id, 1);
+            assertEqual(result[1].id, 3);
+        });
+        
+        test('validateLocationData - handles null', () => {
+            const result = validators.validateLocationData(null);
+            assertEqual(result.city, '');
+            assertEqual(result.state, '');
+            assertEqual(result.country, '');
+            assertEqual(result.place_id, null);
+        });
+        
+        test('validateLocationData - parses description', () => {
+            const input = {
+                description: 'Paris, Île-de-France, France'
+            };
+            const result = validators.validateLocationData(input);
+            assertEqual(result.city, 'Paris');
+            assertEqual(result.state, 'Île-de-France');
+            assertEqual(result.country, 'France');
+        });
+        
+        test('validateLocationData - uses main_text fallback', () => {
+            const input = {
+                main_text: 'Tokyo',
+                secondary_text: 'Japan'
+            };
+            const result = validators.validateLocationData(input);
+            assertEqual(result.city, 'Tokyo');
+            assertEqual(result.country, 'Japan');
+        });
+        
+        test('normalizeError - handles string', () => {
+            const result = validators.normalizeError('Simple error');
+            assertEqual(result, 'Simple error');
+        });
+        
+        test('normalizeError - handles Error object', () => {
+            const error = new Error('Test error');
+            const result = validators.normalizeError(error);
+            assertEqual(result, 'Test error');
+        });
+        
+        test('normalizeError - handles null/undefined', () => {
+            assertEqual(validators.normalizeError(null), 'Unknown error');
+            assertEqual(validators.normalizeError(undefined), 'Unknown error');
+            assertEqual(validators.normalizeError(''), 'Unknown error');
+        });
+        
+        test('normalizeError - handles nested error', () => {
+            const result = validators.normalizeError({ error: 'Nested error' });
+            assertEqual(result, 'Nested error');
+        });
+        
+        test('validateNumber - handles NaN', () => {
+            assertEqual(validators.validateNumber('not a number', 5), 5);
+            assertEqual(validators.validateNumber(null, 10), 10);
+            assertEqual(validators.validateNumber(undefined, 0), 0);
+        });
+        
+        test('validateNumber - enforces min/max', () => {
+            assertEqual(validators.validateNumber(-5, 0, 0, 10), 0);
+            assertEqual(validators.validateNumber(20, 0, 0, 10), 10);
+            assertEqual(validators.validateNumber(5, 0, 0, 10), 5);
+        });
+        
+        test('validateGuestCounts - handles invalid input', () => {
+            const result = validators.validateGuestCounts(null);
+            assertEqual(result.adults, 1);
+            assertEqual(result.children, 0);
+            assertEqual(result.infants, 0);
+            assertEqual(result.pets, 0);
+        });
+        
+        test('validateGuestCounts - enforces minimums', () => {
+            const result = validators.validateGuestCounts({
+                adults: 0,
+                children: -5,
+                infants: -1,
+                pets: -10
+            });
+            assertEqual(result.adults, 1, 'Adults should be at least 1');
+            assertEqual(result.children, 0, 'Children cannot be negative');
+            assertEqual(result.infants, 0, 'Infants cannot be negative');
+            assertEqual(result.pets, 0, 'Pets cannot be negative');
+        });
+        
+        test('validateGuestCounts - enforces maximums', () => {
+            const result = validators.validateGuestCounts({
+                adults: 20,
+                children: 20,
+                infants: 10,
+                pets: 10
+            });
+            assertEqual(result.adults, 16, 'Adults max is 16');
+            assertEqual(result.children, 15, 'Children max is 15');
+            assertEqual(result.infants, 5, 'Infants max is 5');
+            assertEqual(result.pets, 5, 'Pets max is 5');
+        });
+        
+        test('createDebounced - delays execution', (done) => {
+            let callCount = 0;
+            const debounced = validators.createDebounced(() => {
+                callCount++;
+            }, 50);
+            
+            debounced();
+            debounced();
+            debounced();
+            
+            assert(callCount === 0, 'Should not call immediately');
+            
+            setTimeout(() => {
+                assert(callCount === 1, 'Should call once after delay');
+            }, 100);
+        });
+        
+        test('safeQuerySelector - handles missing elements', () => {
+            const result = validators.safeQuerySelector('#does-not-exist');
+            assertEqual(result, null);
+        });
+        
+        test('safeQuerySelector - handles invalid selectors', () => {
+            const result = validators.safeQuerySelector('###invalid');
+            assertEqual(result, null);
+        });
+        
+        // Summary
+        setTimeout(() => {
+            const summary = document.createElement('div');
+            summary.style.marginTop = '20px';
+            summary.style.fontSize = '18px';
+            summary.style.fontWeight = 'bold';
+            summary.innerHTML = `
+                <hr>
+                Tests: ${passCount}/${testCount} passed
+                ${passCount === testCount ? '✅ All tests passed!' : '❌ Some tests failed'}
+            `;
+            results.appendChild(summary);
+        }, 200);
+    </script>
+</body>
+</html>

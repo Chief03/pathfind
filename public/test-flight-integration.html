@@ -1,0 +1,217 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Flight Integration Test</title>
+    <style>
+        body {
+            font-family: system-ui, -apple-system, sans-serif;
+            padding: 20px;
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+        .test-section {
+            background: #f5f5f5;
+            padding: 20px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+        }
+        .status {
+            padding: 10px;
+            border-radius: 4px;
+            margin: 10px 0;
+        }
+        .status.success {
+            background: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
+        .status.error {
+            background: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+        }
+        .status.info {
+            background: #d1ecf1;
+            color: #0c5460;
+            border: 1px solid #bee5eb;
+        }
+        button {
+            background: #8B5CF6;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 6px;
+            cursor: pointer;
+            margin: 5px;
+        }
+        button:hover {
+            background: #7C3AED;
+        }
+        pre {
+            background: #f8f9fa;
+            padding: 10px;
+            border-radius: 4px;
+            overflow-x: auto;
+        }
+    </style>
+</head>
+<body>
+    <h1>🧪 Flight Integration Test</h1>
+    
+    <div class="test-section">
+        <h2>Test Controls</h2>
+        <button onclick="testFlightAPI()">Test Flight API</button>
+        <button onclick="testAddFlight()">Add Test Flight</button>
+        <button onclick="testGetFlights()">Get All Flights</button>
+        <button onclick="clearTestData()">Clear Test Data</button>
+    </div>
+    
+    <div class="test-section">
+        <h2>Test Results</h2>
+        <div id="test-results"></div>
+    </div>
+    
+    <div class="test-section">
+        <h2>API Response</h2>
+        <pre id="api-response">No response yet</pre>
+    </div>
+
+    <script>
+        const API_BASE = '/api';
+        const TEST_TRIP_ID = 'TRIP123';
+        const resultsDiv = document.getElementById('test-results');
+        const responseDiv = document.getElementById('api-response');
+        
+        function log(message, type = 'info') {
+            const status = document.createElement('div');
+            status.className = `status ${type}`;
+            status.innerHTML = `<strong>${new Date().toLocaleTimeString()}</strong>: ${message}`;
+            resultsDiv.appendChild(status);
+            resultsDiv.scrollTop = resultsDiv.scrollHeight;
+        }
+        
+        function showResponse(data) {
+            responseDiv.textContent = JSON.stringify(data, null, 2);
+        }
+        
+        async function testFlightAPI() {
+            log('Testing Flight API connection...');
+            try {
+                const response = await fetch(`${API_BASE}/trips/${TEST_TRIP_ID}/flights`, {
+                    headers: {
+                        'X-User-Id': 'user1'
+                    }
+                });
+                const data = await response.json();
+                
+                if (response.ok) {
+                    log(`✅ API is working! Found ${data.count || 0} flights`, 'success');
+                    showResponse(data);
+                } else {
+                    log(`❌ API error: ${data.error}`, 'error');
+                    showResponse(data);
+                }
+            } catch (error) {
+                log(`❌ Network error: ${error.message}`, 'error');
+                showResponse({ error: error.message });
+            }
+        }
+        
+        async function testAddFlight() {
+            log('Adding test flight...');
+            const testFlight = {
+                airline: 'Test Airlines',
+                flightNumber: 'TEST' + Math.floor(Math.random() * 1000),
+                arrivalDateTime: new Date(Date.now() + 86400000).toISOString(),
+                departureAirport: 'JFK',
+                arrivalAirport: 'LAX',
+                travelerName: 'Test User',
+                notes: 'This is a test flight'
+            };
+            
+            try {
+                const response = await fetch(`${API_BASE}/trips/${TEST_TRIP_ID}/flights`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-User-Id': 'user1'
+                    },
+                    body: JSON.stringify(testFlight)
+                });
+                const data = await response.json();
+                
+                if (response.ok) {
+                    log(`✅ Flight added successfully! ID: ${data.data.id}`, 'success');
+                    showResponse(data);
+                } else {
+                    log(`❌ Failed to add flight: ${data.error}`, 'error');
+                    showResponse(data);
+                }
+            } catch (error) {
+                log(`❌ Network error: ${error.message}`, 'error');
+                showResponse({ error: error.message });
+            }
+        }
+        
+        async function testGetFlights() {
+            log('Fetching all flights...');
+            try {
+                const response = await fetch(`${API_BASE}/trips/${TEST_TRIP_ID}/flights?groupByDate=true`, {
+                    headers: {
+                        'X-User-Id': 'user1'
+                    }
+                });
+                const data = await response.json();
+                
+                if (response.ok) {
+                    log(`✅ Retrieved ${data.count || 0} flights`, 'success');
+                    showResponse(data);
+                } else {
+                    log(`❌ Failed to get flights: ${data.error}`, 'error');
+                    showResponse(data);
+                }
+            } catch (error) {
+                log(`❌ Network error: ${error.message}`, 'error');
+                showResponse({ error: error.message });
+            }
+        }
+        
+        async function clearTestData() {
+            log('Clearing test data...');
+            try {
+                const response = await fetch(`${API_BASE}/trips/${TEST_TRIP_ID}/flights`, {
+                    headers: {
+                        'X-User-Id': 'user1'
+                    }
+                });
+                const data = await response.json();
+                
+                if (response.ok && data.data) {
+                    for (const flight of data.data) {
+                        if (flight.airline && flight.airline.includes('Test')) {
+                            await fetch(`${API_BASE}/flights/${flight.id}`, {
+                                method: 'DELETE',
+                                headers: {
+                                    'X-User-Id': 'user1'
+                                }
+                            });
+                            log(`Deleted test flight: ${flight.id}`, 'info');
+                        }
+                    }
+                    log('✅ Test data cleared', 'success');
+                }
+            } catch (error) {
+                log(`❌ Error clearing data: ${error.message}`, 'error');
+            }
+        }
+        
+        // Run initial test on load
+        window.addEventListener('DOMContentLoaded', () => {
+            log('🚀 Flight Integration Test Ready', 'info');
+            testFlightAPI();
+        });
+    </script>
+</body>
+</html>

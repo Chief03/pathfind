@@ -9,7 +9,7 @@ class PlacesAutocomplete {
         this.input = inputElement;
         this.options = {
             minChars: options.minChars || 2,
-            debounceDelay: options.debounceDelay || 250,
+            debounceDelay: options.debounceDelay || 200,
             maxResults: options.maxResults || 8,
             types: options.types || 'city,state,country',
             placeholder: options.placeholder || 'Enter a location...',
@@ -102,6 +102,11 @@ class PlacesAutocomplete {
                 this.close();
             }
         });
+        
+        // Prevent dropdown from closing on interaction
+        this.dropdown.addEventListener('mousedown', (e) => {
+            e.preventDefault();
+        });
     }
     
     handleInput(e) {
@@ -172,11 +177,21 @@ class PlacesAutocomplete {
         }
     }
     
-    handleBlur() {
+    handleBlur(e) {
+        // Don't close if clicking on dropdown or its children
+        if (e.relatedTarget && this.dropdown.contains(e.relatedTarget)) {
+            return;
+        }
+        
         // Delay to allow click on dropdown items
+        // Increased delay for better click handling
         setTimeout(() => {
-            this.close();
-        }, 200);
+            // Only close if the click wasn't on the dropdown
+            if (!this.dropdown.contains(document.activeElement) && 
+                !this.wrapper.contains(document.activeElement)) {
+                this.close();
+            }
+        }, 150);
     }
     
     navigate(direction) {
@@ -282,8 +297,16 @@ class PlacesAutocomplete {
             
             item.setAttribute('role', 'option');
             item.setAttribute('aria-selected', index === this.selectedIndex);
+            item.setAttribute('tabindex', '0');
             
-            item.addEventListener('click', () => {
+            item.addEventListener('mousedown', (e) => {
+                e.preventDefault(); // Prevent blur event
+                e.stopPropagation(); // Stop event bubbling
+            });
+            
+            item.addEventListener('click', (e) => {
+                e.preventDefault();
+                e.stopPropagation();
                 this.selectPrediction(prediction);
             });
             

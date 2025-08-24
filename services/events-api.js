@@ -1,4 +1,4 @@
-const fetch = require('node-fetch');
+// Node.js 18+ has native fetch, no import needed
 
 class EventsAPI {
     constructor() {

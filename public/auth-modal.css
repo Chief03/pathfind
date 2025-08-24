@@ -1,22 +1,22 @@
 /* Auth Modal Styles - Matching App Color Scheme */
 :root {
-    /* Primary Colors */
-    --primary-navy: #1a2332;
-    --primary-charcoal: #2c3e50;
+    /* Primary Purple Colors - Fun & Vibrant */
+    --primary-purple: #8B5CF6;
+    --primary-deep-purple: #7C3AED;
     
-    /* Accent Colors */
-    --accent-gold: #d4af37;
-    --accent-brass: #b08d57;
+    /* Accent Colors - Complementary */
+    --accent-lavender: #A78BFA;
+    --accent-pink: #EC4899;
     
-    /* Secondary Colors */
-    --ivory: #faf8f3;
-    --stone-gray: #8b8680;
-    --sage: #87a08e;
-    --dusty-blue: #7c8fa0;
+    /* Secondary Colors - Purple Palette */
+    --soft-lavender: #EDE9FE;
+    --medium-purple: #C4B5FD;
+    --violet: #9333EA;
+    --indigo: #6366F1;
     
-    /* CTA Colors */
-    --oxblood: #6b2737;
-    --emerald: #2a5242;
+    /* CTA Colors - Bold & Fun */
+    --hot-pink: #D946EF;
+    --electric-purple: #9333EA;
     
     /* Text & Backgrounds */
     --text-primary: #2a2a2a;
@@ -55,6 +55,7 @@
     right: 0;
     bottom: 0;
     background: rgba(26, 35, 50, 0.7);
+    -webkit-backdrop-filter: blur(8px);
     backdrop-filter: blur(8px);
     animation: fadeIn 0.2s ease;
 }
@@ -107,7 +108,7 @@
 
 .auth-close:hover {
     background: var(--bg-light);
-    color: var(--primary-navy);
+    color: var(--primary-deep-purple);
 }
 
 .auth-header {
@@ -119,7 +120,7 @@
 .auth-header h2 {
     font-size: 16px;
     font-weight: 600;
-    color: var(--primary-navy);
+    color: var(--primary-deep-purple);
     margin: 0;
     padding-bottom: 24px;
     letter-spacing: 0.3px;
@@ -133,7 +134,7 @@
 .auth-content h3 {
     font-size: 22px;
     font-weight: 600;
-    color: var(--primary-navy);
+    color: var(--primary-deep-purple);
     margin: 0 0 24px 0;
 }
 
@@ -154,7 +155,7 @@
 }
 
 .auth-input-group:focus-within {
-    border-color: var(--accent-gold);
+    border-color: var(--accent-pink);
     box-shadow: 0 0 0 3px rgba(212, 175, 55, 0.1);
 }
 
@@ -194,7 +195,7 @@
 
 .auth-input:focus {
     outline: none;
-    border-color: var(--accent-gold);
+    border-color: var(--accent-pink);
     box-shadow: 0 0 0 3px rgba(212, 175, 55, 0.1);
 }
 
@@ -211,7 +212,7 @@
 
 .auth-continue-btn {
     padding: 14px 24px;
-    background: var(--emerald);
+    background: var(--violet);
     color: white;
     border: none;
     border-radius: 8px;
@@ -277,7 +278,7 @@
 
 .social-btn:hover {
     background: var(--bg-light);
-    border-color: var(--accent-gold);
+    border-color: var(--accent-pink);
     transform: translateY(-1px);
     box-shadow: 0 2px 8px rgba(26, 35, 50, 0.1);
 }
@@ -287,14 +288,14 @@
 }
 
 .apple-btn {
-    background: var(--primary-navy);
+    background: var(--primary-purple);
     color: white;
-    border-color: var(--primary-navy);
+    border-color: var(--primary-purple);
 }
 
 .apple-btn:hover {
-    background: var(--primary-charcoal);
-    border-color: var(--primary-charcoal);
+    background: var(--primary-deep-purple);
+    border-color: var(--primary-deep-purple);
 }
 
 /* Mobile Responsive */

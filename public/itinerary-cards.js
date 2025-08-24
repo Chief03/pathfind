@@ -205,10 +205,18 @@
                 const index = cards.findIndex(c => c.id === editingCardId);
                 if (index !== -1) {
                     cards[index] = { ...cards[index], ...cardData };
+                    // Track activity
+                    if (window.addActivityToFeed) {
+                        window.addActivityToFeed('✏️', `Updated event: ${cardData.location}`);
+                    }
                 }
             } else {
                 // Add new card
                 cards.push(cardData);
+                // Track activity
+                if (window.addActivityToFeed) {
+                    window.addActivityToFeed('📍', `Added event: ${cardData.location}`);
+                }
             }
             
             // Sort cards by date and time

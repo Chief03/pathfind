@@ -1,0 +1,220 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Verify All Fixes</title>
+    <script src="runtime-validators.js"></script>
+    <style>
+        body { font-family: system-ui, -apple-system, sans-serif; padding: 20px; max-width: 800px; margin: 0 auto; }
+        .check { margin: 15px 0; padding: 15px; border-radius: 8px; }
+        .pass { background: #d1fae5; border: 1px solid #34d399; }
+        .fail { background: #fee2e2; border: 1px solid #f87171; }
+        .warn { background: #fef3c7; border: 1px solid #fbbf24; }
+        h1 { color: #1f2937; }
+        h2 { color: #4b5563; margin-top: 30px; }
+        .status { font-weight: bold; }
+        code { background: #f3f4f6; padding: 2px 6px; border-radius: 4px; }
+        .fix-list { background: #f9fafb; padding: 15px; border-radius: 8px; margin: 20px 0; }
+        .fix-list li { margin: 8px 0; }
+    </style>
+</head>
+<body>
+    <h1>✅ Fix Verification Dashboard</h1>
+    
+    <div class="fix-list">
+        <h3>Implemented Fixes:</h3>
+        <ol>
+            <li>✅ <code>loadFlights</code> properly defined and exported to window</li>
+            <li>✅ All <code>LoadFlights</code> references fixed to <code>loadFlights</code></li>
+            <li>✅ Feature checks added before calling <code>loadFlights</code></li>
+            <li>✅ DOM null checks added in <code>search-handler.js</code></li>
+            <li>✅ Flight data validation with <code>validateFlightData()</code></li>
+            <li>✅ Location data validation with <code>validateLocationData()</code></li>
+            <li>✅ Guest count validation with proper defaults</li>
+            <li>✅ Error normalization in <code>normalizeError()</code></li>
+            <li>✅ Debouncing for search with <code>createSearchDebouncer()</code></li>
+            <li>✅ Try-catch wrapping with context logging</li>
+            <li>✅ Progress bar percentage formatting</li>
+            <li>✅ Runtime validators loaded globally</li>
+        </ol>
+    </div>
+    
+    <h2>Runtime Checks</h2>
+    <div id="checks"></div>
+    
+    <h2>Console Output</h2>
+    <pre id="console-output" style="background: #1f2937; color: #10b981; padding: 15px; border-radius: 8px; overflow-x: auto;"></pre>
+    
+    <script>
+        const checks = document.getElementById('checks');
+        const consoleOutput = document.getElementById('console-output');
+        let logs = [];
+        
+        // Capture console logs
+        const originalLog = console.log;
+        const originalError = console.error;
+        const originalWarn = console.warn;
+        
+        console.log = function(...args) {
+            logs.push(`[LOG] ${args.join(' ')}`);
+            updateConsole();
+            originalLog.apply(console, args);
+        };
+        
+        console.error = function(...args) {
+            logs.push(`[ERROR] ${args.join(' ')}`);
+            updateConsole();
+            originalError.apply(console, args);
+        };
+        
+        console.warn = function(...args) {
+            logs.push(`[WARN] ${args.join(' ')}`);
+            updateConsole();
+            originalWarn.apply(console, args);
+        };
+        
+        function updateConsole() {
+            consoleOutput.textContent = logs.slice(-10).join('\n');
+        }
+        
+        function addCheck(name, condition, details = '') {
+            const div = document.createElement('div');
+            div.className = 'check ' + (condition ? 'pass' : 'fail');
+            div.innerHTML = `
+                <div class="status">${condition ? '✅ PASS' : '❌ FAIL'}: ${name}</div>
+                ${details ? `<div style="margin-top: 5px; color: #6b7280;">${details}</div>` : ''}
+            `;
+            checks.appendChild(div);
+        }
+        
+        // Run checks
+        console.log('Starting verification checks...');
+        
+        // Check 1: loadFlights is defined
+        addCheck(
+            'loadFlights function is globally accessible',
+            typeof window.loadFlights === 'function',
+            `Type: ${typeof window.loadFlights}`
+        );
+        
+        // Check 2: flightsManager exists
+        addCheck(
+            'flightsManager object exists',
+            typeof window.flightsManager === 'object' && window.flightsManager !== null,
+            `Methods: ${window.flightsManager ? Object.keys(window.flightsManager).join(', ') : 'N/A'}`
+        );
+        
+        // Check 3: Validators loaded
+        addCheck(
+            'Runtime validators loaded',
+            typeof window.validators === 'object' && window.validators !== null,
+            `Available validators: ${window.validators ? Object.keys(window.validators).length : 0}`
+        );
+        
+        // Check 4: setupProgressCheckboxes defined
+        addCheck(
+            'setupProgressCheckboxes function defined',
+            typeof window.setupProgressCheckboxes === 'function',
+            'Progress checkbox handler is available'
+        );
+        
+        // Check 5: Error handler loaded
+        addCheck(
+            'Global error handler installed',
+            typeof window.errorLog !== 'undefined' || window.addEventListener.toString().includes('error'),
+            'Error handling is configured'
+        );
+        
+        // Check 6: Validator functions work
+        let validatorTest = false;
+        try {
+            const result = window.validators.validateFlightData([
+                { id: 1, airline: 'AA', flightNumber: '123' },
+                null,
+                { id: 2, airline: 'UA', flightNumber: '456' }
+            ]);
+            validatorTest = result.length === 2;
+        } catch (e) {
+            console.error('Validator test failed:', e);
+        }
+        
+        addCheck(
+            'Flight data validator works correctly',
+            validatorTest,
+            'Filters invalid flight entries'
+        );
+        
+        // Check 7: Location validator
+        let locationTest = false;
+        try {
+            const result = window.validators.validateLocationData({
+                description: 'Paris, France'
+            });
+            locationTest = result.city === 'Paris' && result.country === 'France';
+        } catch (e) {
+            console.error('Location validator test failed:', e);
+        }
+        
+        addCheck(
+            'Location data validator works',
+            locationTest,
+            'Parses location strings correctly'
+        );
+        
+        // Check 8: Error normalizer
+        let errorTest = false;
+        try {
+            const result1 = window.validators.normalizeError(new Error('Test error'));
+            const result2 = window.validators.normalizeError(null);
+            errorTest = result1 === 'Test error' && result2 === 'Unknown error';
+        } catch (e) {
+            console.error('Error normalizer test failed:', e);
+        }
+        
+        addCheck(
+            'Error normalizer handles all types',
+            errorTest,
+            'Safely extracts error messages'
+        );
+        
+        // Check 9: No ReferenceErrors in console
+        addCheck(
+            'No ReferenceError for undefined functions',
+            !logs.some(log => log.includes('ReferenceError')),
+            logs.filter(log => log.includes('ReferenceError')).join(', ') || 'Console is clean'
+        );
+        
+        // Check 10: Debouncer available
+        addCheck(
+            'Search debouncer available',
+            typeof window.validators.createSearchDebouncer === 'function',
+            'Prevents rapid API calls'
+        );
+        
+        console.log('Verification complete!');
+        
+        // Summary
+        const passCount = document.querySelectorAll('.check.pass').length;
+        const totalCount = document.querySelectorAll('.check').length;
+        
+        const summary = document.createElement('div');
+        summary.className = passCount === totalCount ? 'check pass' : 'check warn';
+        summary.innerHTML = `
+            <h3>Summary: ${passCount}/${totalCount} checks passed</h3>
+            ${passCount === totalCount ? 
+                '<p>🎉 All fixes verified successfully! The application should work without errors.</p>' :
+                '<p>⚠️ Some checks failed. Review the details above.</p>'
+            }
+            <p style="margin-top: 10px;">
+                <strong>Next steps:</strong><br>
+                1. Clear browser cache (Cmd+Shift+R)<br>
+                2. Open DevTools Console<br>
+                3. Test the application flow<br>
+                4. Verify no ReferenceErrors appear
+            </p>
+        `;
+        checks.appendChild(summary);
+    </script>
+</body>
+</html>

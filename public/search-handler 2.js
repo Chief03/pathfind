@@ -28,35 +28,14 @@
             
             console.log('[SearchHandler] Search clicked');
             
-            const tripNameEl = document.getElementById('hero-trip-name');
-            const customTripCodeEl = document.getElementById('hero-trip-code');
-            const destinationEl = document.getElementById('hero-destination');
-            const datesEl = document.getElementById('hero-dates');
-            const guestsEl = document.getElementById('hero-who');
-            
-            if (!tripNameEl || !destinationEl || !datesEl) {
-                console.error('[SearchHandler] Required form elements not found');
-                return;
-            }
-            
-            const tripName = tripNameEl.value;
-            const customTripCode = customTripCodeEl ? customTripCodeEl.value : '';
-            const destination = destinationEl.value;
-            const dates = datesEl.value;
-            const guests = guestsEl ? guestsEl.value : '';
+            const tripName = document.getElementById('hero-trip-name').value;
+            const destination = document.getElementById('hero-destination').value;
+            const dates = document.getElementById('hero-dates').value;
+            const guests = document.getElementById('hero-who').value;
             
             if (!tripName || !destination || !dates) {
                 alert('Please enter a trip name, select a destination and dates');
                 return;
-            }
-            
-            // Validate custom trip code if provided
-            if (customTripCode) {
-                const codeRegex = /^[A-Z0-9]{6,12}$/;
-                if (!codeRegex.test(customTripCode.toUpperCase())) {
-                    alert('Trip code must be 6-12 characters, using only letters and numbers');
-                    return;
-                }
             }
             
             console.log('[SearchHandler] Creating trip:', { tripName, destination, dates, guests });
@@ -70,10 +49,10 @@
                 startDate = startDateObj.toISOString().split('T')[0];
                 endDate = endDateObj.toISOString().split('T')[0];
                 
-                // Calculate number of nights (includes all nights except checkout night)
+                // Calculate number of nights (excluding last night)
                 const diffTime = Math.abs(endDateObj - startDateObj);
                 const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
-                numberOfNights = diffDays; // This gives us the correct number of nights
+                numberOfNights = Math.max(0, diffDays - 1); // Subtract 1 to exclude last night
             } else {
                 // Single date
                 startDate = new Date(dates).toISOString().split('T')[0];
@@ -90,14 +69,9 @@
             };
             const totalTravelers = guestSelection.adults + guestSelection.children + guestSelection.infants;
             
-            // Generate trip ID - use custom code or auto-generate
-            const tripId = customTripCode ? 
-                customTripCode.toUpperCase() : 
-                'TRIP' + Date.now().toString(36).toUpperCase().slice(-6);
-            
             // Create trip data
             const tripData = {
-                id: tripId,
+                id: 'trip-' + Date.now(),
                 name: tripName,
                 destination: destination,
                 dates: dates,
@@ -143,11 +117,7 @@
             if (dashboardDates) dashboardDates.textContent = dates;
             
             const tripCode = document.getElementById('trip-code');
-            if (tripCode) tripCode.textContent = tripData.id;
-            
-            // Also update overview trip code display
-            const overviewTripCode = document.getElementById('trip-code-overview');
-            if (overviewTripCode) overviewTripCode.textContent = tripData.id;
+            if (tripCode) tripCode.textContent = tripData.id.slice(-6).toUpperCase();
             
             // Update overview page display
             const overviewDestination = document.getElementById('overview-destination');
@@ -169,14 +139,6 @@
             const travelerCount = document.getElementById('traveler-count');
             if (travelerCount) {
                 travelerCount.textContent = totalTravelers;
-            }
-            
-            // Update trip planning progress
-            if (window.updateTripProgress) {
-                // Small delay to ensure DOM is updated
-                setTimeout(() => {
-                    window.updateTripProgress(tripData);
-                }, 100);
             }
             
             // Switch to Overview tab

@@ -14,7 +14,7 @@
 .events-header h3 {
     font-size: 24px;
     font-weight: 600;
-    color: var(--primary-navy);
+    color: var(--primary-deep-purple);
     margin-bottom: 4px;
 }
 
@@ -63,13 +63,13 @@
 
 .event-filter-chip:hover {
     background: #f8f9fa;
-    border-color: var(--primary-navy);
+    border-color: var(--primary-purple);
 }
 
 .event-filter-chip.active {
-    background: var(--primary-navy);
+    background: var(--primary-purple);
     color: white;
-    border-color: var(--primary-navy);
+    border-color: var(--primary-purple);
 }
 
 /* Events Container */
@@ -80,7 +80,7 @@
 }
 
 .events-date-section {
-    border-left: 3px solid var(--primary-navy);
+    border-left: 3px solid var(--primary-purple);
     padding-left: 20px;
 }
 
@@ -94,7 +94,7 @@
 .date-badge {
     font-size: 18px;
     font-weight: 600;
-    color: var(--primary-navy);
+    color: var(--primary-deep-purple);
 }
 
 .event-count {
@@ -273,11 +273,11 @@
 .event-price {
     font-size: 14px;
     font-weight: 600;
-    color: var(--primary-navy);
+    color: var(--primary-deep-purple);
 }
 
 .event-price.free {
-    color: var(--emerald);
+    color: var(--violet);
 }
 
 .event-actions {
@@ -311,7 +311,7 @@
     align-items: center;
     gap: 4px;
     padding: 6px 12px;
-    background: var(--primary-navy);
+    background: var(--primary-purple);
     color: white;
     border: none;
     border-radius: 6px;
@@ -327,7 +327,7 @@
 }
 
 .add-to-itinerary-btn.added {
-    background: var(--emerald);
+    background: var(--violet);
     cursor: default;
 }
 
@@ -354,7 +354,7 @@
     width: 40px;
     height: 40px;
     border: 3px solid #f0f0f0;
-    border-top-color: var(--primary-navy);
+    border-top-color: var(--primary-purple);
     border-radius: 50%;
     animation: spin 1s linear infinite;
     margin-bottom: 16px;

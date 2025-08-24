@@ -3,6 +3,40 @@
 (function() {
     let flights = [];
     let currentTripId = null;
+    
+    // Sample flight data for demonstration
+    const sampleFlights = [
+        {
+            id: 'sample-1',
+            travelerName: 'Sarah Johnson',
+            airline: 'Delta Airlines',
+            flightNumber: 'DL 1542',
+            departureAirport: 'JFK',
+            arrivalAirport: 'LAX',
+            arrivalDateTime: new Date(Date.now() + 86400000).toISOString().slice(0, 16), // Tomorrow
+            notes: 'Terminal 4, Gate B12'
+        },
+        {
+            id: 'sample-2',
+            travelerName: 'Mike Chen',
+            airline: 'United Airlines',
+            flightNumber: 'UA 328',
+            departureAirport: 'ORD',
+            arrivalAirport: 'LAX',
+            arrivalDateTime: new Date(Date.now() + 90000000).toISOString().slice(0, 16), // Tomorrow + 1 hour
+            notes: 'Arriving at Terminal 7'
+        },
+        {
+            id: 'sample-3',
+            travelerName: 'Emma Davis',
+            airline: 'Southwest',
+            flightNumber: 'WN 2465',
+            departureAirport: 'DFW',
+            arrivalAirport: 'LAX',
+            arrivalDateTime: new Date(Date.now() + 172800000).toISOString().slice(0, 16), // Day after tomorrow
+            notes: ''
+        }
+    ];
     let editingFlightId = null;
     let selectedFlightId = null;
     let socket = null;
@@ -58,8 +92,15 @@
         // Get trip ID
         currentTripId = localStorage.getItem('currentTripId');
         
-        // Load flights
-        loadFlights();
+        // Load flights with feature check
+        if (typeof loadFlights === 'function') {
+            loadFlights().catch(err => {
+                console.error('[Flights] Failed to load flights:', err);
+                showError('Failed to load flights. Please refresh the page.');
+            });
+        } else {
+            console.error('[Flights] loadFlights function not defined');
+        }
         
         // Add button handlers
         if (elements.addEmptyBtn) {
@@ -132,7 +173,11 @@
         document.addEventListener('visibilitychange', () => {
             if (!document.hidden) {
                 console.log('[Flights] Tab focused, revalidating...');
-                loadFlights();
+                if (typeof loadFlights === 'function') {
+                    loadFlights().catch(err => {
+                        console.error('[Flights] Failed to reload flights:', err);
+                    });
+                }
             }
         });
         
@@ -155,11 +200,55 @@
                 }
             } else {
                 // Adding new flight
-                elements.modalTitle.textContent = 'Add Flight';
+                elements.modalTitle.textContent = 'Add Your Flight Details';
                 elements.form.reset();
+                
+                // Set default arrival date to tomorrow
+                const tomorrow = new Date();
+                tomorrow.setDate(tomorrow.getDate() + 1);
+                tomorrow.setHours(14, 0, 0, 0);
+                elements.arrivalDateTime.value = tomorrow.toISOString().slice(0, 16);
+                
+                // Setup traveler selector
+                setupTravelerSelector();
             }
             
             elements.modal.classList.remove('hidden');
+        }
+        
+        // Setup traveler selector buttons
+        function setupTravelerSelector() {
+            const travelerOptions = document.querySelectorAll('.traveler-option');
+            const nameInput = document.getElementById('traveler-name');
+            
+            travelerOptions.forEach(option => {
+                option.addEventListener('click', function(e) {
+                    e.preventDefault();
+                    
+                    // Update active state
+                    travelerOptions.forEach(opt => opt.classList.remove('active'));
+                    this.classList.add('active');
+                    
+                    // Show/hide name input based on selection
+                    if (this.dataset.traveler === 'me') {
+                        nameInput.style.display = 'none';
+                        nameInput.value = 'Me';
+                        nameInput.required = false;
+                    } else {
+                        nameInput.style.display = 'block';
+                        nameInput.value = '';
+                        nameInput.placeholder = "Enter friend's name";
+                        nameInput.required = true;
+                        nameInput.focus();
+                    }
+                });
+            });
+            
+            // Set default to "Me"
+            const meOption = document.querySelector('[data-traveler="me"]');
+            if (meOption) {
+                meOption.click();
+            }
         }
         
         function closeFlightModal() {
@@ -178,6 +267,27 @@
                 arrivalDateTime: elements.arrivalDateTime.value,
                 notes: elements.flightNotes.value
             };
+            
+            // If no currentTripId, save locally
+            if (!currentTripId) {
+                if (editingFlightId) {
+                    // Update existing flight
+                    const index = flights.findIndex(f => f.id === editingFlightId);
+                    if (index !== -1) {
+                        flights[index] = { ...flightData, id: editingFlightId };
+                    }
+                } else {
+                    // Add new flight with generated ID
+                    flightData.id = 'local-' + Date.now();
+                    flights.push(flightData);
+                }
+                
+                // Save to localStorage
+                localStorage.setItem('localFlights', JSON.stringify(flights));
+                closeFlightModal();
+                renderFlights();
+                return;
+            }
             
             try {
                 let response;
@@ -199,19 +309,42 @@
                 
                 if (response.ok) {
                     closeFlightModal();
-                    loadFlights();
+                    if (typeof loadFlights === 'function') {
+                        loadFlights();
+                    }
                 } else {
                     console.error('[Flights] Save failed:', await response.text());
                     alert('Failed to save flight. Please try again.');
                 }
             } catch (error) {
                 console.error('[Flights] Save error:', error);
-                alert('Error saving flight. Please try again.');
+                // Fallback to local storage
+                if (editingFlightId) {
+                    const index = flights.findIndex(f => f.id === editingFlightId);
+                    if (index !== -1) {
+                        flights[index] = { ...flightData, id: editingFlightId };
+                    }
+                } else {
+                    flightData.id = 'local-' + Date.now();
+                    flights.push(flightData);
+                }
+                localStorage.setItem('localFlights', JSON.stringify(flights));
+                closeFlightModal();
+                renderFlights();
             }
         }
         
         async function deleteFlight(flightId) {
             if (!confirm('Are you sure you want to delete this flight?')) {
+                return;
+            }
+            
+            // If no currentTripId, delete locally
+            if (!currentTripId) {
+                flights = flights.filter(f => f.id !== flightId);
+                localStorage.setItem('localFlights', JSON.stringify(flights));
+                closeDrawer();
+                renderFlights();
                 return;
             }
             
@@ -222,28 +355,118 @@
                 
                 if (response.ok) {
                     closeDrawer();
-                    loadFlights();
+                    if (typeof loadFlights === 'function') {
+                        loadFlights();
+                    }
                 } else {
                     console.error('[Flights] Delete failed');
                     alert('Failed to delete flight. Please try again.');
                 }
             } catch (error) {
                 console.error('[Flights] Delete error:', error);
-                alert('Error deleting flight. Please try again.');
+                // Fallback to local deletion
+                flights = flights.filter(f => f.id !== flightId);
+                localStorage.setItem('localFlights', JSON.stringify(flights));
+                closeDrawer();
+                renderFlights();
             }
         }
         
-        async function loadFlights() {
-            if (!currentTripId) return;
+        async function loadFlights(params = {}) {
+            const startTime = performance.now();
+            const context = {
+                tripId: currentTripId || params.tripId,
+                source: params.source || 'unknown',
+                timestamp: new Date().toISOString()
+            };
+            
+            console.log('[Flights] Loading flights with context:', context);
             
             try {
-                const response = await fetch(`/api/trips/${currentTripId}/flights`);
-                if (response.ok) {
-                    flights = await response.json();
+                // Always check for locally saved flights first
+                const localFlights = localStorage.getItem('localFlights');
+                if (localFlights) {
+                    try {
+                        const parsed = JSON.parse(localFlights);
+                        // Validate flight data if validators available
+                        if (window.validators && typeof window.validators.validateFlightData === 'function') {
+                            flights = window.validators.validateFlightData(parsed);
+                        } else {
+                            flights = Array.isArray(parsed) ? parsed : [];
+                        }
+                        console.log('[Flights] Loaded local flights:', flights.length);
+                        renderFlights();
+                        return flights;
+                    } catch (e) {
+                        console.warn('[Flights] Error parsing local flights:', e);
+                        localStorage.removeItem('localFlights'); // Clear corrupted data
+                    }
+                }
+                
+                if (!context.tripId) {
+                    // Show empty state to encourage adding flights
+                    console.log('[Flights] No trip ID, showing empty state');
+                    flights = [];
                     renderFlights();
+                    return flights;
+                }
+                
+                // Make API call with timeout
+                const controller = new AbortController();
+                const timeoutId = setTimeout(() => controller.abort(), 10000); // 10s timeout
+                
+                try {
+                    const response = await fetch(`/api/trips/${context.tripId}/flights`, {
+                        signal: controller.signal
+                    });
+                    clearTimeout(timeoutId);
+                    
+                    if (response.ok) {
+                        const data = await response.json();
+                        
+                        // Validate response data
+                        if (window.validators && typeof window.validators.validateFlightData === 'function') {
+                            flights = window.validators.validateFlightData(data);
+                        } else {
+                            flights = Array.isArray(data) ? data : [];
+                        }
+                        
+                        // If no flights exist, optionally load sample data
+                        if (flights.length === 0) {
+                            const useSample = localStorage.getItem('useSampleFlights') !== 'false';
+                            if (useSample) {
+                                console.log('[Flights] No flights found, using sample data');
+                                flights = [...sampleFlights];
+                            }
+                        }
+                        
+                        const loadTime = performance.now() - startTime;
+                        console.log(`[Flights] Loaded ${flights.length} flights in ${loadTime.toFixed(2)}ms`);
+                        renderFlights();
+                        return flights;
+                    } else {
+                        throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+                    }
+                } catch (fetchError) {
+                    clearTimeout(timeoutId);
+                    if (fetchError.name === 'AbortError') {
+                        throw new Error('Request timeout - please check your connection');
+                    }
+                    throw fetchError;
                 }
             } catch (error) {
-                console.error('[Flights] Load error:', error);
+                console.error('[Flights] Load error with context:', { error, context });
+                
+                // Show user-friendly error
+                if (window.showNotification && typeof window.showNotification === 'function') {
+                    window.showNotification('⚠️ Connection Issue', 'Using offline mode with sample flights');
+                }
+                
+                // Fallback to sample data on error
+                console.log('[Flights] Using fallback sample data');
+                flights = [...sampleFlights];
+                renderFlights();
+                return flights;
             }
         }
         
@@ -421,6 +644,96 @@
         },
         getFlights: function() {
             return flights;
+        },
+        loadFlights: loadFlights,  // Expose loadFlights function
+        renderFlights: renderFlights  // Expose renderFlights for testing
+    };
+    
+    // Also expose loadFlights directly for backward compatibility
+    window.loadFlights = loadFlights;
+    
+    // Quick add functions
+    window.quickAddFlight = function(type) {
+        const modal = document.getElementById('flight-modal');
+        if (modal) {
+            modal.classList.remove('hidden');
+            
+            // Setup form based on type
+            const travelerOptions = document.querySelectorAll('.traveler-option');
+            const nameInput = document.getElementById('traveler-name');
+            
+            if (type === 'me') {
+                const meOption = document.querySelector('[data-traveler="me"]');
+                if (meOption) {
+                    travelerOptions.forEach(opt => opt.classList.remove('active'));
+                    meOption.classList.add('active');
+                    nameInput.style.display = 'none';
+                    nameInput.value = 'Me';
+                    nameInput.required = false;
+                }
+            } else {
+                const friendOption = document.querySelector('[data-traveler="friend"]');
+                if (friendOption) {
+                    travelerOptions.forEach(opt => opt.classList.remove('active'));
+                    friendOption.classList.add('active');
+                    nameInput.style.display = 'block';
+                    nameInput.value = '';
+                    nameInput.placeholder = "Enter friend's name";
+                    nameInput.required = true;
+                    setTimeout(() => nameInput.focus(), 100);
+                }
+            }
+            
+            // Set default values
+            const tomorrow = new Date();
+            tomorrow.setDate(tomorrow.getDate() + 1);
+            tomorrow.setHours(14, 0, 0, 0);
+            document.getElementById('arrival-datetime').value = tomorrow.toISOString().slice(0, 16);
+        }
+    };
+    
+    // Add sample flights function
+    window.addSampleFlights = function() {
+        const sampleData = [
+            {
+                id: 'sample-' + Date.now(),
+                travelerName: 'Sarah Johnson',
+                airline: 'Delta Airlines',
+                flightNumber: 'DL 1542',
+                departureAirport: 'JFK',
+                arrivalAirport: 'LAX',
+                arrivalDateTime: new Date(Date.now() + 86400000).toISOString().slice(0, 16),
+                notes: 'Terminal 4, Gate B12'
+            },
+            {
+                id: 'sample-' + Date.now() + 1,
+                travelerName: 'Mike Chen',
+                airline: 'United Airlines',
+                flightNumber: 'UA 328',
+                departureAirport: 'ORD',
+                arrivalAirport: 'LAX',
+                arrivalDateTime: new Date(Date.now() + 90000000).toISOString().slice(0, 16),
+                notes: 'Arriving at Terminal 7'
+            },
+            {
+                id: 'sample-' + Date.now() + 2,
+                travelerName: 'Emma Davis',
+                airline: 'Southwest',
+                flightNumber: 'WN 2465',
+                departureAirport: 'DFW',
+                arrivalAirport: 'LAX',
+                arrivalDateTime: new Date(Date.now() + 172800000).toISOString().slice(0, 16),
+                notes: ''
+            }
+        ];
+        
+        flights = [...flights, ...sampleData];
+        localStorage.setItem('localFlights', JSON.stringify(flights));
+        loadFlights();
+        
+        // Show success message
+        if (window.showToast) {
+            window.showToast('Sample flights added! You can edit or delete them anytime.');
         }
     };
 })();

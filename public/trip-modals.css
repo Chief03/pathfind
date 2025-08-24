@@ -15,7 +15,7 @@
 .join-trip-link {
     background: none;
     border: none;
-    color: var(--emerald);
+    color: var(--violet);
     font-size: 16px;
     font-weight: 600;
     text-decoration: underline;
@@ -53,6 +53,7 @@
     right: 0;
     bottom: 0;
     background: rgba(26, 35, 50, 0.7);
+    -webkit-backdrop-filter: blur(8px);
     backdrop-filter: blur(8px);
 }
 
@@ -79,7 +80,7 @@
 .trip-modal-header h3 {
     font-size: 20px;
     font-weight: 600;
-    color: var(--primary-navy);
+    color: var(--primary-deep-purple);
     margin: 0;
 }
 
@@ -100,7 +101,7 @@
 
 .trip-modal-close:hover {
     background: var(--bg-light);
-    color: var(--primary-navy);
+    color: var(--primary-deep-purple);
 }
 
 .trip-modal-body {
@@ -130,7 +131,7 @@
     gap: 12px;
     padding: 16px;
     background: var(--bg-light);
-    border: 2px solid var(--accent-gold);
+    border: 2px solid var(--accent-pink);
     border-radius: 12px;
     margin-bottom: 24px;
 }
@@ -140,7 +141,7 @@
     font-size: 20px;
     font-weight: 700;
     font-family: 'Courier New', monospace;
-    color: var(--primary-navy);
+    color: var(--primary-deep-purple);
     letter-spacing: 2px;
     text-align: center;
 }
@@ -150,7 +151,7 @@
     align-items: center;
     gap: 8px;
     padding: 8px 16px;
-    background: var(--emerald);
+    background: var(--violet);
     color: white;
     border: none;
     border-radius: 8px;
@@ -174,7 +175,7 @@
 .primary-trip-btn {
     width: 100%;
     padding: 14px 24px;
-    background: var(--emerald);
+    background: var(--violet);
     color: white;
     border: none;
     border-radius: 8px;
@@ -229,7 +230,7 @@
 
 .trip-code-input:focus {
     outline: none;
-    border-color: var(--accent-gold);
+    border-color: var(--accent-pink);
     box-shadow: 0 0 0 3px rgba(212, 175, 55, 0.1);
 }
 
@@ -239,7 +240,7 @@
 }
 
 .trip-code-input.success {
-    border-color: var(--emerald);
+    border-color: var(--violet);
     box-shadow: 0 0 0 3px rgba(42, 82, 66, 0.1);
 }
 
@@ -260,7 +261,7 @@
 .success-message {
     margin-top: 8px;
     font-size: 14px;
-    color: var(--emerald);
+    color: var(--violet);
     display: flex;
     align-items: center;
     gap: 6px;
@@ -292,7 +293,7 @@
 
 .secondary-trip-btn:hover {
     background: var(--border-light);
-    border-color: var(--accent-gold);
+    border-color: var(--accent-pink);
 }
 
 /* Loading States */

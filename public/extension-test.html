@@ -1,0 +1,46 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Extension Error Test</title>
+</head>
+<body>
+    <h1>Chrome Extension Error Diagnostic</h1>
+    <p>Open DevTools Console to check for errors.</p>
+    
+    <div id="status"></div>
+    
+    <h2>To fix the "listener indicated async response" error:</h2>
+    <ol>
+        <li><strong>Option 1:</strong> Open this page in Incognito Mode (Cmd+Shift+N)</li>
+        <li><strong>Option 2:</strong> Disable Chrome Extensions:
+            <ul>
+                <li>Go to chrome://extensions/</li>
+                <li>Toggle off extensions one by one</li>
+                <li>Common culprits: LastPass, Grammarly, AdBlock, React DevTools</li>
+            </ul>
+        </li>
+        <li><strong>Option 3:</strong> Use a different browser profile</li>
+    </ol>
+    
+    <script>
+        // This will show if any extension is trying to communicate
+        console.log('Testing for Chrome extension errors...');
+        
+        // Check if running in extension context
+        if (typeof chrome !== 'undefined' && chrome.runtime && chrome.runtime.id) {
+            document.getElementById('status').innerHTML = '<p style="color: red;">Running in extension context!</p>';
+        } else {
+            document.getElementById('status').innerHTML = '<p style="color: green;">No extension context detected in page.</p>';
+        }
+        
+        // Log any errors
+        window.addEventListener('error', (e) => {
+            console.error('Page error:', e);
+        });
+        
+        console.log('If you see "Unchecked runtime.lastError" or "message channel closed" errors above, they are from Chrome extensions, NOT from this application.');
+    </script>
+</body>
+</html>

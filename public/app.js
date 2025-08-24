@@ -321,13 +321,30 @@ async function joinTrip() {
 }
 
 function connectToTrip(tripId) {
-    socket = io();
-    
-    socket.emit('join-trip', {
-        tripId: tripId,
-        userId: currentUser.id,
-        userName: currentUser.name
-    });
+    // Only try to connect if Socket.io is available
+    if (typeof io !== 'undefined') {
+        try {
+            // Configure Socket.io with proper URL
+            const socketUrl = window.location.hostname === 'localhost' 
+                ? 'http://localhost:3001' 
+                : window.location.origin;
+            
+            socket = io(socketUrl, {
+                transports: ['websocket', 'polling'],
+                reconnection: false, // Disable auto-reconnection in production
+                timeout: 5000
+            });
+            
+            socket.emit('join-trip', {
+                tripId: tripId,
+                userId: currentUser.id,
+                userName: currentUser.name
+            });
+        } catch (error) {
+            console.log('[Socket] Connection not available - running in offline mode');
+            socket = null;
+        }
+    }
     
     socket.on('trip-data', (trip) => {
         currentTrip = trip;

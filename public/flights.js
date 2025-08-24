@@ -457,9 +457,11 @@
             } catch (error) {
                 console.error('[Flights] Load error with context:', { error, context });
                 
-                // Show user-friendly error
-                if (window.showNotification && typeof window.showNotification === 'function') {
-                    window.showNotification('⚠️ Connection Issue', 'Using offline mode with sample flights');
+                // Don't show connection errors in production - just use fallback silently
+                if (window.location.hostname === 'localhost') {
+                    if (window.showNotification && typeof window.showNotification === 'function') {
+                        window.showNotification('⚠️ Connection Issue', 'Using offline mode with sample flights');
+                    }
                 }
                 
                 // Fallback to sample data on error

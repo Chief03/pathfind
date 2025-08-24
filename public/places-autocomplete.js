@@ -424,6 +424,11 @@ class PlacesAutocomplete {
     showFallbackSuggestions(query) {
         // Provide static suggestions when API fails
         const fallbackSuggestions = [
+            { description: 'Colorado, USA', place_id: 'fallback_colorado' },
+            { description: 'Denver, Colorado, USA', place_id: 'fallback_denver' },
+            { description: 'Boulder, Colorado, USA', place_id: 'fallback_boulder' },
+            { description: 'Aspen, Colorado, USA', place_id: 'fallback_aspen' },
+            { description: 'Colorado Springs, Colorado, USA', place_id: 'fallback_colorado_springs' },
             { description: 'New York, NY, USA', place_id: 'fallback_nyc' },
             { description: 'Los Angeles, CA, USA', place_id: 'fallback_la' },
             { description: 'Chicago, IL, USA', place_id: 'fallback_chicago' },
@@ -432,15 +437,32 @@ class PlacesAutocomplete {
             { description: 'Las Vegas, NV, USA', place_id: 'fallback_vegas' },
             { description: 'Orlando, FL, USA', place_id: 'fallback_orlando' },
             { description: 'Seattle, WA, USA', place_id: 'fallback_seattle' },
-            { description: 'Denver, CO, USA', place_id: 'fallback_denver' },
-            { description: 'Boston, MA, USA', place_id: 'fallback_boston' }
+            { description: 'Boston, MA, USA', place_id: 'fallback_boston' },
+            { description: 'Austin, TX, USA', place_id: 'fallback_austin' },
+            { description: 'Phoenix, AZ, USA', place_id: 'fallback_phoenix' },
+            { description: 'San Diego, CA, USA', place_id: 'fallback_sandiego' },
+            { description: 'Portland, OR, USA', place_id: 'fallback_portland' },
+            { description: 'Nashville, TN, USA', place_id: 'fallback_nashville' },
+            { description: 'New Orleans, LA, USA', place_id: 'fallback_neworleans' }
         ];
         
-        // Filter based on query if provided
+        // Filter based on query if provided - more flexible matching
         if (query && query.length > 0) {
-            this.predictions = fallbackSuggestions.filter(s => 
-                s.description.toLowerCase().includes(query.toLowerCase())
+            const queryLower = query.toLowerCase();
+            // First try exact substring match
+            let matches = fallbackSuggestions.filter(s => 
+                s.description.toLowerCase().includes(queryLower)
             );
+            
+            // If no matches, try matching first letters of words
+            if (matches.length === 0) {
+                matches = fallbackSuggestions.filter(s => {
+                    const words = s.description.toLowerCase().split(/[\s,]+/);
+                    return words.some(word => word.startsWith(queryLower));
+                });
+            }
+            
+            this.predictions = matches.slice(0, 8);
         } else {
             this.predictions = fallbackSuggestions.slice(0, 5);
         }

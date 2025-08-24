@@ -11,7 +11,19 @@ const EventsAPI = require('./services/events-api');
 
 const app = express();
 const server = http.createServer(app);
-const io = socketIO(server);
+
+// Configure CORS for production
+const allowedOrigins = process.env.ALLOWED_ORIGINS 
+    ? process.env.ALLOWED_ORIGINS.split(',') 
+    : ['http://localhost:3000', 'http://localhost:3001'];
+
+const io = socketIO(server, {
+    cors: {
+        origin: allowedOrigins,
+        methods: ["GET", "POST"],
+        credentials: true
+    }
+});
 
 // Initialize Events API
 const eventsAPI = new EventsAPI();

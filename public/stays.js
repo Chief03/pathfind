@@ -91,6 +91,27 @@
         function openModal(stayId = null) {
             editingStayId = stayId;
             
+            // Get trip dates for validation
+            const tripData = localStorage.getItem('currentTrip');
+            let tripStartDate = '';
+            let tripEndDate = '';
+            
+            if (tripData) {
+                const trip = JSON.parse(tripData);
+                tripStartDate = trip.startDate || '';
+                tripEndDate = trip.endDate || '';
+                
+                // Set min and max dates for date inputs to enforce trip date range
+                if (tripStartDate) {
+                    elements.checkinDate.min = tripStartDate;
+                    elements.checkoutDate.min = tripStartDate;
+                }
+                if (tripEndDate) {
+                    elements.checkinDate.max = tripEndDate;
+                    elements.checkoutDate.max = tripEndDate;
+                }
+            }
+            
             if (stayId) {
                 // Editing existing stay
                 const stay = stays.find(s => s.id === stayId);
@@ -111,13 +132,17 @@
                 elements.form.reset();
                 
                 // Set default dates based on trip dates
-                const tripData = localStorage.getItem('currentTrip');
-                if (tripData) {
-                    const trip = JSON.parse(tripData);
-                    if (trip.startDate) elements.checkinDate.value = trip.startDate;
-                    if (trip.endDate) elements.checkoutDate.value = trip.endDate;
-                }
+                if (tripStartDate) elements.checkinDate.value = tripStartDate;
+                if (tripEndDate) elements.checkoutDate.value = tripEndDate;
             }
+            
+            // Update checkout date minimum when checkin date changes
+            elements.checkinDate.addEventListener('change', function() {
+                elements.checkoutDate.min = this.value;
+                if (elements.checkoutDate.value && elements.checkoutDate.value < this.value) {
+                    elements.checkoutDate.value = this.value;
+                }
+            });
             
             elements.modal.classList.remove('hidden');
         }
@@ -149,7 +174,7 @@
                     stays[index] = stayData;
                     // Track activity
                     if (window.addActivityToFeed) {
-                        window.addActivityToFeed('✏️', `Updated accommodation: ${stayData.name}`);
+                        window.addActivityToFeed('✏️', `updated accommodation: ${stayData.name}`, null, 'update');
                     }
                 }
             } else {
@@ -157,7 +182,7 @@
                 stays.push(stayData);
                 // Track activity
                 if (window.addActivityToFeed) {
-                    window.addActivityToFeed('🏨', `Added accommodation: ${stayData.name}`);
+                    window.addActivityToFeed('🏨', `added accommodation: ${stayData.name}`, null, 'add');
                 }
             }
 
@@ -195,7 +220,7 @@
                 
                 // Track activity
                 if (window.addActivityToFeed) {
-                    window.addActivityToFeed('🗑️', `Removed accommodation: ${stay.name}`);
+                    window.addActivityToFeed('🗑️', `removed accommodation: ${stay.name}`, null, 'remove');
                 }
                 
                 // Update progress
@@ -226,6 +251,8 @@
                     stays = JSON.parse(storedStays);
                     renderStays();
                 }
+                // Load suggestions after loading stays
+                loadSuggestions();
             } catch (error) {
                 console.error('[Stays] Error loading stays:', error);
             }
@@ -240,6 +267,65 @@
             } catch (error) {
                 console.error('[Stays] Error saving stays:', error);
             }
+        }
+        
+        // Load suggested accommodations
+        function loadSuggestions() {
+            const tripData = localStorage.getItem('currentTrip');
+            if (!tripData) return;
+            
+            const trip = JSON.parse(tripData);
+            const destination = trip.location || 'your destination';
+            
+            // Popular hotel chains and accommodation types
+            const suggestions = [
+                { name: `Hilton ${destination}`, type: 'hotel', icon: '🏨' },
+                { name: `Marriott Downtown`, type: 'hotel', icon: '🏨' },
+                { name: `Holiday Inn Express`, type: 'hotel', icon: '🏨' },
+                { name: `Hyatt Place`, type: 'hotel', icon: '🏨' },
+                { name: `Best Western Plus`, type: 'hotel', icon: '🏨' },
+                { name: `Cozy Airbnb`, type: 'airbnb', icon: '🏠' },
+                { name: `Downtown Loft`, type: 'airbnb', icon: '🏠' },
+                { name: `Local Hostel`, type: 'hostel', icon: '🏡' },
+                { name: `Youth Hostel`, type: 'hostel', icon: '🏡' },
+                { name: `Boutique Hotel`, type: 'hotel', icon: '✨' },
+                { name: `Resort & Spa`, type: 'hotel', icon: '🌴' },
+                { name: `Budget Inn`, type: 'hotel', icon: '💰' }
+            ];
+            
+            const suggestionsGrid = document.getElementById('stay-suggestions-grid');
+            if (!suggestionsGrid) return;
+            
+            suggestionsGrid.innerHTML = '';
+            
+            // Take random 6 suggestions
+            const shuffled = suggestions.sort(() => 0.5 - Math.random());
+            const selectedSuggestions = shuffled.slice(0, 6);
+            
+            selectedSuggestions.forEach(suggestion => {
+                const suggestionCard = document.createElement('div');
+                suggestionCard.className = 'stay-suggestion-card';
+                suggestionCard.innerHTML = `
+                    <span class="suggestion-icon">${suggestion.icon}</span>
+                    <span class="suggestion-name">${suggestion.name}</span>
+                `;
+                
+                suggestionCard.addEventListener('click', () => {
+                    // Open modal with pre-filled data
+                    openModal();
+                    elements.name.value = suggestion.name;
+                    elements.type.value = suggestion.type;
+                    
+                    // Pre-fill dates from trip
+                    if (trip.startDate) elements.checkinDate.value = trip.startDate;
+                    if (trip.endDate) elements.checkoutDate.value = trip.endDate;
+                    
+                    // Focus on address field since name and type are filled
+                    setTimeout(() => elements.address.focus(), 100);
+                });
+                
+                suggestionsGrid.appendChild(suggestionCard);
+            });
         }
 
         // Render stays
@@ -290,6 +376,12 @@
             const nights = Math.ceil((new Date(stay.checkoutDate) - new Date(stay.checkinDate)) / (1000 * 60 * 60 * 24));
             
             div.innerHTML = `
+                <button class="stay-delete-btn" data-stay-id="${stay.id}" aria-label="Delete accommodation">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <polyline points="3 6 5 6 21 6"></polyline>
+                        <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
+                    </svg>
+                </button>
                 <div class="stay-header-info">
                     <div>
                         <div class="stay-name">${stay.name}</div>
@@ -324,7 +416,21 @@
             `;
             
             // Add click handlers
-            div.addEventListener('click', () => openModal(stay.id));
+            div.addEventListener('click', (e) => {
+                // Don't open modal if delete button was clicked
+                if (!e.target.closest('.stay-delete-btn')) {
+                    openModal(stay.id);
+                }
+            });
+            
+            // Add delete button handler
+            const deleteBtn = div.querySelector('.stay-delete-btn');
+            if (deleteBtn) {
+                deleteBtn.addEventListener('click', (e) => {
+                    e.stopPropagation();
+                    deleteStay(stay.id);
+                });
+            }
             
             return div;
         }

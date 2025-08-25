@@ -119,7 +119,7 @@ class FlightsPage {
             });
         }
         
-        // Modal backdrop click
+        // Modal backdrop click (click outside to close)
         if (this.elements.modal) {
             this.elements.modal.addEventListener('click', (e) => {
                 if (e.target === this.elements.modal) {
@@ -174,13 +174,22 @@ class FlightsPage {
         try {
             const response = await fetch(`/api/trips/${this.currentTripId}/flights`);
             if (response.ok) {
-                this.flights = await response.json();
+                const result = await response.json();
+                // Handle both API response formats
+                this.flights = result.data || result.flights || result || [];
+                // Ensure flights is always an array
+                if (!Array.isArray(this.flights)) {
+                    console.warn('[FlightsPage] Flights data is not an array:', this.flights);
+                    this.flights = [];
+                }
                 this.setState(this.flights.length === 0 ? 'empty' : 'list');
             } else {
                 throw new Error('Failed to load flights');
             }
         } catch (error) {
             console.error('[FlightsPage] Load error:', error);
+            // Initialize with empty array on error
+            this.flights = [];
             this.setState('empty');
         }
     }
@@ -357,6 +366,12 @@ class FlightsPage {
     groupFlightsByDate(flights) {
         const grouped = {};
         
+        // Ensure flights is an array
+        if (!Array.isArray(flights)) {
+            console.error('[FlightsPage] groupFlightsByDate: flights is not an array:', flights);
+            return grouped;
+        }
+        
         // Sort flights by arrival time
         const sorted = [...flights].sort((a, b) => 
             new Date(a.arrivalTimeISO) - new Date(b.arrivalTimeISO)
@@ -428,6 +443,17 @@ class FlightsPage {
     }
     
     updateModalHTML() {
+        // Get trip dates from localStorage
+        const tripData = JSON.parse(localStorage.getItem('currentTrip') || '{}');
+        let minDate = '';
+        let maxDate = '';
+        
+        if (tripData.startDate && tripData.endDate) {
+            // Convert dates to datetime-local format
+            minDate = new Date(tripData.startDate).toISOString().slice(0, 16);
+            maxDate = new Date(tripData.endDate + 'T23:59:59').toISOString().slice(0, 16);
+        }
+        
         const modalHTML = `
             <div class="flight-modal-content">
                 <div class="flight-modal-header">
@@ -465,7 +491,14 @@ class FlightsPage {
                     </div>
                     <div class="form-group">
                         <label for="arrival-time">Arrival Date & Time *</label>
-                        <input type="datetime-local" id="arrival-time" required>
+                        <input type="datetime-local" id="arrival-time" 
+                               ${minDate ? `min="${minDate}"` : ''} 
+                               ${maxDate ? `max="${maxDate}"` : ''} 
+                               required>
+                        ${tripData.startDate && tripData.endDate ? 
+                            `<small style="color: #64748b; margin-top: 4px; display: block;">
+                                Must be within trip dates: ${new Date(tripData.startDate).toLocaleDateString()} - ${new Date(tripData.endDate).toLocaleDateString()}
+                            </small>` : ''}
                     </div>
                     <div class="form-group">
                         <label for="flight-notes">Notes</label>
@@ -510,6 +543,13 @@ class FlightsPage {
                 this.saveFlight();
             });
         }
+        
+        // Click outside to close
+        modal.addEventListener('click', (e) => {
+            if (e.target === modal) {
+                this.closeFlightModal();
+            }
+        })
         
         // Auto-uppercase airport code
         const airportCode = modal.querySelector('#arrival-airport-code');

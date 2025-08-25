@@ -89,7 +89,7 @@ function setupProgressCheckboxes() {
                     'accommodation': 'Accommodation booked'
                 };
                 const action = this.checked ? 'Completed' : 'Unchecked';
-                window.addActivityToFeed('✅', `${action}: ${taskLabels[task]}`);
+                window.addActivityToFeed('✅', `${action.toLowerCase()} task: ${taskLabels[task]}`, null, action === 'Completed' ? 'complete' : 'update');
             }
         });
     });
@@ -395,6 +395,31 @@ function showTripPlanner() {
     
     initializeMap();
     updateTripDisplay();
+    
+    // Auto-check completed progress items since user has reached dashboard
+    setTimeout(() => {
+        const destinationCheckbox = document.querySelector('.progress-checkbox[data-task="destination"]');
+        const datesCheckbox = document.querySelector('.progress-checkbox[data-task="dates"]');
+        const travelersCheckbox = document.querySelector('.progress-checkbox[data-task="travelers"]');
+        
+        if (destinationCheckbox && !destinationCheckbox.checked) {
+            console.log('[App] Auto-checking destination checkbox on dashboard load');
+            destinationCheckbox.checked = true;
+            destinationCheckbox.dispatchEvent(new Event('change', { bubbles: true }));
+        }
+        
+        if (datesCheckbox && !datesCheckbox.checked) {
+            console.log('[App] Auto-checking dates checkbox on dashboard load');
+            datesCheckbox.checked = true;
+            datesCheckbox.dispatchEvent(new Event('change', { bubbles: true }));
+        }
+        
+        if (travelersCheckbox && !travelersCheckbox.checked) {
+            console.log('[App] Auto-checking travelers checkbox on dashboard load');
+            travelersCheckbox.checked = true;
+            travelersCheckbox.dispatchEvent(new Event('change', { bubbles: true }));
+        }
+    }, 500);
 }
 
 function initializeMap() {
@@ -502,6 +527,8 @@ function switchTab(tabName) {
     document.querySelectorAll('.tab-content').forEach(panel => {
         if (panel) {
             panel.classList.add('hidden');
+            panel.classList.remove('active');
+            panel.style.display = 'none';
         }
     });
     
@@ -509,53 +536,68 @@ function switchTab(tabName) {
     const targetTab = document.getElementById(`${tabName}-tab`);
     if (targetTab) {
         targetTab.classList.remove('hidden');
+        targetTab.classList.add('active');
+        targetTab.style.display = 'block';
         console.log('[App] Switched to tab:', tabName);
         
         // Special handling for flights tab
         if (tabName === 'flights') {
-            console.log('[App] Initializing enhanced flights tab...');
+            console.log('[App] Initializing flights tab...');
             
-            // Load enhanced flight system if not already loaded
-            if (!window.flightSystem) {
-                console.log('[App] Loading enhanced flight system...');
-                
-                // Check if the script is already loaded
-                if (!document.querySelector('script[src="flights-enhanced.js"]')) {
-                    const script = document.createElement('script');
-                    script.src = 'flights-enhanced.js';
-                    script.onload = () => {
-                        console.log('[App] Enhanced flight system loaded');
-                        // Initialize after script loads
-                        if (window.flightSystem && typeof window.flightSystem.init === 'function') {
-                            // Replace the flights-tab content with enhanced system
-                            const flightsTab = document.getElementById('flights-tab');
-                            if (flightsTab) {
-                                flightsTab.innerHTML = '<div class="flights-tab-content"></div>';
-                                window.flightSystem.init();
+            // Use the existing FlightsPage system which works with the current HTML
+            if (!window.flightsPage) {
+                console.log('[App] Creating new FlightsPage instance');
+                // Check if FlightsPage class exists
+                if (typeof FlightsPage !== 'undefined') {
+                    window.flightsPage = new FlightsPage();
+                } else {
+                    console.error('[App] FlightsPage class not found');
+                    // Try to load the flights-page.js script
+                    if (!document.querySelector('script[src="flights-page.js"]')) {
+                        const script = document.createElement('script');
+                        script.src = 'flights-page.js';
+                        script.onload = () => {
+                            if (typeof FlightsPage !== 'undefined') {
+                                window.flightsPage = new FlightsPage();
                             }
-                        }
-                    };
-                    script.onerror = () => {
-                        console.error('[App] Failed to load enhanced flight system');
-                        // Fallback to old system
-                        if (!window.flightsPage) {
-                            console.log('[App] Falling back to FlightsPage');
-                            window.flightsPage = new FlightsPage();
-                        }
-                    };
-                    document.head.appendChild(script);
-                } else if (window.flightSystem && typeof window.flightSystem.init === 'function') {
-                    // Script already loaded, just initialize
-                    const flightsTab = document.getElementById('flights-tab');
-                    if (flightsTab && !flightsTab.querySelector('.flights-enhanced-container')) {
-                        flightsTab.innerHTML = '<div class="flights-tab-content"></div>';
-                        window.flightSystem.init();
+                        };
+                        document.head.appendChild(script);
                     }
                 }
             } else {
-                // System already initialized
-                console.log('[App] Enhanced flight system already initialized');
+                // Refresh the flights display
+                if (window.flightsPage && window.flightsPage.loadFlights) {
+                    window.flightsPage.loadFlights();
+                }
             }
+        }
+        
+        // Auto-check completed progress items when showing overview tab
+        if (tabName === 'overview') {
+            // Since users reached the dashboard, they must have completed these steps
+            setTimeout(() => {
+                const destinationCheckbox = document.querySelector('.progress-checkbox[data-task="destination"]');
+                const datesCheckbox = document.querySelector('.progress-checkbox[data-task="dates"]');
+                const travelersCheckbox = document.querySelector('.progress-checkbox[data-task="travelers"]');
+                
+                if (destinationCheckbox && !destinationCheckbox.checked) {
+                    console.log('[App] Auto-checking destination checkbox');
+                    destinationCheckbox.checked = true;
+                    destinationCheckbox.dispatchEvent(new Event('change', { bubbles: true }));
+                }
+                
+                if (datesCheckbox && !datesCheckbox.checked) {
+                    console.log('[App] Auto-checking dates checkbox');
+                    datesCheckbox.checked = true;
+                    datesCheckbox.dispatchEvent(new Event('change', { bubbles: true }));
+                }
+                
+                if (travelersCheckbox && !travelersCheckbox.checked) {
+                    console.log('[App] Auto-checking travelers checkbox');
+                    travelersCheckbox.checked = true;
+                    travelersCheckbox.dispatchEvent(new Event('change', { bubbles: true }));
+                }
+            }, 100);
         }
     } else {
         console.error('[App] Target tab not found:', `${tabName}-tab`);
@@ -1233,6 +1275,29 @@ function initializeDatePicker() {
             if (window.itineraryCards) {
                 window.itineraryCards.loadTrip(tripData.id);
             }
+            
+            // Auto-check the completed progress items since user has already:
+            // 1. Selected destination
+            // 2. Chosen dates  
+            // 3. Selected travelers
+            setTimeout(() => {
+                const destinationCheckbox = document.querySelector('.progress-checkbox[data-task="destination"]');
+                const datesCheckbox = document.querySelector('.progress-checkbox[data-task="dates"]');
+                const travelersCheckbox = document.querySelector('.progress-checkbox[data-task="travelers"]');
+                
+                if (destinationCheckbox && !destinationCheckbox.checked) {
+                    destinationCheckbox.checked = true;
+                    destinationCheckbox.dispatchEvent(new Event('change', { bubbles: true }));
+                }
+                if (datesCheckbox && !datesCheckbox.checked) {
+                    datesCheckbox.checked = true;
+                    datesCheckbox.dispatchEvent(new Event('change', { bubbles: true }));
+                }
+                if (travelersCheckbox && !travelersCheckbox.checked) {
+                    travelersCheckbox.checked = true;
+                    travelersCheckbox.dispatchEvent(new Event('change', { bubbles: true }));
+                }
+            }, 500); // Small delay to ensure DOM is ready
         });
     }
 }
@@ -1725,28 +1790,56 @@ function initializeGuestSelector() {
     // Make updateGuestDisplay available globally
     window.updateGuestDisplay = updateGuestDisplay;
     
-    // Activity tracking functions
-    window.addActivityToFeed = function(icon, text, time = 'Just now') {
+    // Enhanced Activity tracking functions
+    window.addActivityToFeed = function(icon, text, userName = null, actionType = null) {
         const activityFeed = document.querySelector('.activity-feed');
         if (!activityFeed) return;
         
-        // Create new activity item
+        // Get current user name if not provided
+        if (!userName) {
+            const tripData = JSON.parse(localStorage.getItem('currentTrip') || '{}');
+            userName = localStorage.getItem('userName') || 'Someone';
+        }
+        
+        // Format time
+        const now = new Date();
+        const timeString = formatActivityTime(now);
+        
+        // Determine activity color based on type
+        const activityColors = {
+            'add': '#10b981',      // Green for additions
+            'remove': '#ef4444',   // Red for deletions
+            'update': '#3b82f6',   // Blue for updates
+            'complete': '#8b5cf6', // Purple for completions
+            'default': '#64748b'   // Gray for default
+        };
+        
+        const color = activityColors[actionType] || activityColors.default;
+        
+        // Create new activity item with enhanced styling
         const activityItem = document.createElement('div');
-        activityItem.className = 'activity-item';
+        activityItem.className = 'activity-item enhanced';
         activityItem.innerHTML = `
-            <div class="activity-icon">${icon}</div>
+            <div class="activity-icon" style="background: ${color}20; color: ${color};">${icon}</div>
             <div class="activity-details">
-                <p class="activity-text">${text}</p>
-                <span class="activity-time">${time}</span>
+                <p class="activity-text">
+                    <span class="activity-user">${userName}</span>
+                    ${text}
+                </p>
+                <span class="activity-time">${timeString}</span>
             </div>
+            <div class="activity-indicator" style="background: ${color};"></div>
         `;
+        
+        // Add animation
+        activityItem.style.animation = 'slideInRight 0.3s ease';
         
         // Insert at the beginning of the feed
         activityFeed.insertBefore(activityItem, activityFeed.firstChild);
         
-        // Keep only the last 5 activities
+        // Keep only the last 10 activities (increased from 5)
         const activities = activityFeed.querySelectorAll('.activity-item');
-        if (activities.length > 5) {
+        if (activities.length > 10) {
             activities[activities.length - 1].remove();
         }
         
@@ -1755,13 +1848,262 @@ function initializeGuestSelector() {
         if (tripData) {
             const trip = JSON.parse(tripData);
             if (!trip.activities) trip.activities = [];
-            trip.activities.unshift({ icon, text, time: new Date().toISOString() });
-            trip.activities = trip.activities.slice(0, 5); // Keep only last 5
+            trip.activities.unshift({ 
+                icon, 
+                text, 
+                userName,
+                actionType,
+                timestamp: now.toISOString() 
+            });
+            trip.activities = trip.activities.slice(0, 20); // Store more in memory
             localStorage.setItem('currentTrip', JSON.stringify(trip));
+        }
+        
+        // Update activity count if exists
+        const activityCount = document.querySelector('.activity-count');
+        if (activityCount) {
+            const count = parseInt(activityCount.textContent) || 0;
+            activityCount.textContent = count + 1;
         }
     };
     
-    window.loadActivities = function() {
+    // Helper function to format activity time
+    function formatActivityTime(date) {
+        const now = new Date();
+        const diff = now - date;
+        const seconds = Math.floor(diff / 1000);
+        const minutes = Math.floor(seconds / 60);
+        const hours = Math.floor(minutes / 60);
+        const days = Math.floor(hours / 24);
+        
+        if (seconds < 30) return 'Just now';
+        if (seconds < 60) return `${seconds} seconds ago`;
+        if (minutes < 60) return `${minutes} minute${minutes > 1 ? 's' : ''} ago`;
+        if (hours < 24) return `${hours} hour${hours > 1 ? 's' : ''} ago`;
+        if (days < 7) return `${days} day${days > 1 ? 's' : ''} ago`;
+        
+        return date.toLocaleDateString('en-US', { 
+            month: 'short', 
+            day: 'numeric',
+            hour: 'numeric',
+            minute: '2-digit'
+        });
+    }
+    
+    // Date and Traveler Edit Functions
+window.openDateEditor = function() {
+    // Get current trip data
+    const tripData = JSON.parse(localStorage.getItem('currentTrip') || '{}');
+    
+    // Show the date selector from landing page
+    const dateDropdown = document.querySelector('.date-dropdown');
+    const heroDateInput = document.getElementById('hero-date-input');
+    
+    if (dateDropdown && heroDateInput) {
+        // Position it as a modal
+        dateDropdown.style.position = 'fixed';
+        dateDropdown.style.top = '50%';
+        dateDropdown.style.left = '50%';
+        dateDropdown.style.transform = 'translate(-50%, -50%)';
+        dateDropdown.style.zIndex = '10000';
+        dateDropdown.style.boxShadow = '0 20px 60px rgba(0, 0, 0, 0.3)';
+        
+        // Add backdrop
+        const backdrop = document.createElement('div');
+        backdrop.className = 'edit-modal-backdrop';
+        backdrop.style.cssText = `
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0, 0, 0, 0.5);
+            z-index: 9999;
+        `;
+        document.body.appendChild(backdrop);
+        
+        // Set current dates
+        const startInput = document.getElementById('start-date');
+        const endInput = document.getElementById('end-date');
+        if (startInput && tripData.startDate) startInput.value = tripData.startDate;
+        if (endInput && tripData.endDate) endInput.value = tripData.endDate;
+        
+        // Show dropdown
+        dateDropdown.classList.remove('hidden');
+        
+        // Update apply button to save to trip
+        const applyBtn = dateDropdown.querySelector('.apply-dates-btn');
+        if (applyBtn) {
+            const newApplyBtn = applyBtn.cloneNode(true);
+            applyBtn.parentNode.replaceChild(newApplyBtn, applyBtn);
+            
+            newApplyBtn.addEventListener('click', () => {
+                const newStartDate = startInput.value;
+                const newEndDate = endInput.value;
+                
+                if (newStartDate && newEndDate) {
+                    // Update trip data
+                    tripData.startDate = newStartDate;
+                    tripData.endDate = newEndDate;
+                    
+                    // Calculate duration
+                    const start = new Date(newStartDate);
+                    const end = new Date(newEndDate);
+                    const duration = Math.ceil((end - start) / (1000 * 60 * 60 * 24));
+                    tripData.numberOfNights = duration;
+                    
+                    // Format dates
+                    const options = { month: 'short', day: 'numeric', year: 'numeric' };
+                    const formattedStart = start.toLocaleDateString('en-US', options);
+                    const formattedEnd = end.toLocaleDateString('en-US', options);
+                    tripData.dates = `${formattedStart} - ${formattedEnd}`;
+                    
+                    // Save to localStorage
+                    localStorage.setItem('currentTrip', JSON.stringify(tripData));
+                    
+                    // Update displays
+                    const durationEl = document.getElementById('trip-duration');
+                    if (durationEl) {
+                        durationEl.textContent = duration === 1 ? '1 day' : `${duration} days`;
+                    }
+                    
+                    const overviewDatesEl = document.getElementById('overview-dates');
+                    if (overviewDatesEl) {
+                        overviewDatesEl.textContent = tripData.dates;
+                    }
+                    
+                    // Close modal
+                    dateDropdown.classList.add('hidden');
+                    dateDropdown.style = '';
+                    backdrop.remove();
+                    
+                    // Show success message
+                    if (window.addActivityToFeed) {
+                        window.addActivityToFeed('📅', `changed trip dates to ${tripData.dates}`, null, 'update');
+                    }
+                }
+            });
+        }
+        
+        // Close on backdrop click
+        backdrop.addEventListener('click', () => {
+            dateDropdown.classList.add('hidden');
+            dateDropdown.style = '';
+            backdrop.remove();
+        });
+    }
+};
+
+window.openTravelersEditor = function() {
+    // Get current trip data
+    const tripData = JSON.parse(localStorage.getItem('currentTrip') || '{}');
+    
+    // Show the guest selector from landing page
+    const whoDropdown = document.querySelector('.who-dropdown');
+    
+    if (whoDropdown) {
+        // Position it as a modal
+        whoDropdown.style.position = 'fixed';
+        whoDropdown.style.top = '50%';
+        whoDropdown.style.left = '50%';
+        whoDropdown.style.transform = 'translate(-50%, -50%)';
+        whoDropdown.style.zIndex = '10000';
+        whoDropdown.style.boxShadow = '0 20px 60px rgba(0, 0, 0, 0.3)';
+        
+        // Add backdrop
+        const backdrop = document.createElement('div');
+        backdrop.className = 'edit-modal-backdrop';
+        backdrop.style.cssText = `
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0, 0, 0, 0.5);
+            z-index: 9999;
+        `;
+        document.body.appendChild(backdrop);
+        
+        // Show dropdown
+        whoDropdown.classList.remove('hidden');
+        
+        // Add save button if not exists
+        let saveBtn = whoDropdown.querySelector('.save-travelers-btn');
+        if (!saveBtn) {
+            saveBtn = document.createElement('button');
+            saveBtn.className = 'save-travelers-btn';
+            saveBtn.textContent = 'Save Changes';
+            saveBtn.style.cssText = `
+                width: 100%;
+                padding: 14px;
+                background: var(--violet);
+                color: white;
+                border: none;
+                border-radius: 8px;
+                font-size: 15px;
+                font-weight: 600;
+                cursor: pointer;
+                margin-top: 16px;
+            `;
+            whoDropdown.appendChild(saveBtn);
+        }
+        
+        saveBtn.addEventListener('click', () => {
+            // Get current guest counts
+            const adultCount = parseInt(document.getElementById('adult-count')?.textContent || '0');
+            const childCount = parseInt(document.getElementById('child-count')?.textContent || '0');
+            const infantCount = parseInt(document.getElementById('infant-count')?.textContent || '0');
+            const petCount = parseInt(document.getElementById('pet-count')?.textContent || '0');
+            
+            const totalTravelers = adultCount + childCount + infantCount;
+            
+            // Update trip data
+            tripData.totalTravelers = totalTravelers;
+            tripData.guestSelection = {
+                adults: adultCount,
+                children: childCount,
+                infants: infantCount,
+                pets: petCount
+            };
+            
+            // Format guest string
+            const parts = [];
+            if (adultCount > 0) parts.push(`${adultCount} ${adultCount === 1 ? 'Adult' : 'Adults'}`);
+            if (childCount > 0) parts.push(`${childCount} ${childCount === 1 ? 'Child' : 'Children'}`);
+            if (infantCount > 0) parts.push(`${infantCount} ${infantCount === 1 ? 'Infant' : 'Infants'}`);
+            if (petCount > 0) parts.push(`${petCount} ${petCount === 1 ? 'Pet' : 'Pets'}`);
+            tripData.guests = parts.join(', ') || '0 Guests';
+            
+            // Save to localStorage
+            localStorage.setItem('currentTrip', JSON.stringify(tripData));
+            
+            // Update display
+            const travelerCountEl = document.getElementById('traveler-count');
+            if (travelerCountEl) {
+                travelerCountEl.textContent = totalTravelers;
+            }
+            
+            // Close modal
+            whoDropdown.classList.add('hidden');
+            whoDropdown.style = '';
+            backdrop.remove();
+            
+            // Show success message
+            if (window.addActivityToFeed) {
+                window.addActivityToFeed('👥', `updated travelers to ${tripData.guests}`, null, 'update');
+            }
+        });
+        
+        // Close on backdrop click
+        backdrop.addEventListener('click', () => {
+            whoDropdown.classList.add('hidden');
+            whoDropdown.style = '';
+            backdrop.remove();
+        });
+    }
+};
+
+window.loadActivities = function() {
         const tripData = localStorage.getItem('currentTrip');
         if (tripData) {
             const trip = JSON.parse(tripData);

@@ -542,19 +542,21 @@
 
                     <!-- Quick Stats -->
                     <div class="overview-stats">
-                        <div class="stat-card">
+                        <div class="stat-card clickable" id="edit-dates-card" onclick="openDateEditor()">
                             <div class="stat-icon">⏱️</div>
                             <div class="stat-info">
                                 <div class="stat-value" id="trip-duration">0 days</div>
                                 <div class="stat-label">Duration</div>
                             </div>
+                            <div class="edit-hint">Click to edit</div>
                         </div>
-                        <div class="stat-card">
+                        <div class="stat-card clickable" id="edit-travelers-card" onclick="openTravelersEditor()">
                             <div class="stat-icon">👥</div>
                             <div class="stat-info">
                                 <div class="stat-value" id="traveler-count">0</div>
                                 <div class="stat-label">Travelers</div>
                             </div>
+                            <div class="edit-hint">Click to edit</div>
                         </div>
                         <div class="stat-card">
                             <div class="stat-icon">✈️</div>
@@ -938,6 +940,15 @@
                                     Add Stay
                                 </button>
                             </div>
+                            
+                            <!-- Suggested Accommodations -->
+                            <div id="stay-suggestions" class="stay-suggestions">
+                                <h4 class="suggestions-title">Quick Add Popular Options</h4>
+                                <div id="stay-suggestions-grid" class="stay-suggestions-grid">
+                                    <!-- Suggestions will be populated here -->
+                                </div>
+                            </div>
+                            
                             <div id="stays-content" class="stays-content">
                                 <!-- Stay items will be added here -->
                             </div>

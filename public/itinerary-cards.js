@@ -207,7 +207,7 @@
                     cards[index] = { ...cards[index], ...cardData };
                     // Track activity
                     if (window.addActivityToFeed) {
-                        window.addActivityToFeed('✏️', `Updated event: ${cardData.location}`);
+                        window.addActivityToFeed('✏️', `updated event: ${cardData.location}`, null, 'update');
                     }
                 }
             } else {
@@ -215,7 +215,7 @@
                 cards.push(cardData);
                 // Track activity
                 if (window.addActivityToFeed) {
-                    window.addActivityToFeed('📍', `Added event: ${cardData.location}`);
+                    window.addActivityToFeed('📍', `added event: ${cardData.location}`, null, 'add');
                 }
             }
             
@@ -381,8 +381,19 @@
                 elements.container.appendChild(cardEl);
             });
             
+            // Update activity count in the overview
+            updateActivityCount();
+            
             // Setup drag and drop
             setupDragAndDrop();
+        }
+        
+        function updateActivityCount() {
+            const activityCountEl = document.getElementById('activity-count');
+            if (activityCountEl) {
+                activityCountEl.textContent = cards.length;
+                console.log('[ItineraryCards] Updated activity count to:', cards.length);
+            }
         }
         
         function createCardElement(card, index) {

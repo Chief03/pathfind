@@ -20,12 +20,17 @@
         
         // Get trip data
         const tripData = JSON.parse(localStorage.getItem('currentTrip') || '{}');
-        currentCity = tripData.destination || tripData.destinationCity || 'Paris';
+        console.log('[Places] Trip data:', tripData);
+        
+        // Get destination from the correct property
+        currentCity = tripData.destination || tripData.location || 'New York';
         
         // Extract city name if it includes country
         if (currentCity.includes(',')) {
             currentCity = currentCity.split(',')[0].trim();
         }
+        
+        console.log('[Places] Using city:', currentCity);
         
         // Update city name in header
         const cityNameEl = document.getElementById('places-city-name');
@@ -125,22 +130,115 @@
     }
     
     function getCityCoordinates(city) {
-        // Basic city coordinates (expand as needed)
+        // Normalize city name for matching
+        const normalizedCity = city.toLowerCase().trim();
+        
+        // Comprehensive city coordinates
         const cityCoords = {
-            'Paris': [48.8566, 2.3522],
-            'London': [51.5074, -0.1278],
-            'New York': [40.7128, -74.0060],
-            'Tokyo': [35.6762, 139.6503],
-            'Barcelona': [41.3851, 2.1734],
-            'Rome': [41.9028, 12.4964],
-            'Amsterdam': [52.3676, 4.9041],
-            'Berlin': [52.5200, 13.4050],
-            'Madrid': [40.4168, -3.7038],
-            'Vienna': [48.2082, 16.3738]
+            // Original cities
+            'paris': [48.8566, 2.3522],
+            'london': [51.5074, -0.1278],
+            'new york': [40.7128, -74.0060],
+            'tokyo': [35.6762, 139.6503],
+            'barcelona': [41.3851, 2.1734],
+            'rome': [41.9028, 12.4964],
+            'amsterdam': [52.3676, 4.9041],
+            'berlin': [52.5200, 13.4050],
+            'madrid': [40.4168, -3.7038],
+            'vienna': [48.2082, 16.3738],
+            
+            // US Cities
+            'colorado': [39.5501, -105.7821], // Colorado state center
+            'denver': [39.7392, -104.9903],
+            'colorado springs': [38.8339, -104.8214],
+            'boulder': [40.0150, -105.2705],
+            'aspen': [39.1911, -106.8175],
+            'houston': [29.7604, -95.3698],
+            'houston tx': [29.7604, -95.3698],
+            'austin': [30.2672, -97.7431],
+            'dallas': [32.7767, -96.7970],
+            'san antonio': [29.4241, -98.4936],
+            'los angeles': [34.0522, -118.2437],
+            'san francisco': [37.7749, -122.4194],
+            'chicago': [41.8781, -87.6298],
+            'miami': [25.7617, -80.1918],
+            'seattle': [47.6062, -122.3321],
+            'boston': [42.3601, -71.0589],
+            'las vegas': [36.1699, -115.1398],
+            'phoenix': [33.4484, -112.0740],
+            'atlanta': [33.7490, -84.3880],
+            'nashville': [36.1627, -86.7816],
+            
+            // International destinations
+            'bali': [-8.3405, 115.0920],
+            'denpasar': [-8.6500, 115.2167],
+            'ubud': [-8.5069, 115.2625],
+            'seminyak': [-8.6916, 115.1686],
+            'canggu': [-8.6478, 115.1385],
+            
+            // Africa
+            'nigeria': [9.0820, 8.6753], // Nigeria center
+            'lagos': [6.5244, 3.3792],
+            'abuja': [9.0765, 7.3986],
+            'port harcourt': [4.8156, 7.0498],
+            'cairo': [30.0444, 31.2357],
+            'johannesburg': [-26.2041, 28.0473],
+            'cape town': [-33.9249, 18.4241],
+            'nairobi': [-1.2921, 36.8219],
+            'marrakech': [31.6295, -7.9811],
+            'casablanca': [33.5731, -7.5898],
+            
+            // Asia
+            'singapore': [1.3521, 103.8198],
+            'bangkok': [13.7563, 100.5018],
+            'hong kong': [22.3193, 114.1694],
+            'shanghai': [31.2304, 121.4737],
+            'beijing': [39.9042, 116.4074],
+            'seoul': [37.5665, 126.9780],
+            'mumbai': [19.0760, 72.8777],
+            'delhi': [28.6139, 77.2090],
+            'dubai': [25.2048, 55.2708],
+            
+            // Europe
+            'lisbon': [38.7223, -9.1393],
+            'prague': [50.0755, 14.4378],
+            'budapest': [47.4979, 19.0402],
+            'copenhagen': [55.6761, 12.5683],
+            'stockholm': [59.3293, 18.0686],
+            'oslo': [59.9139, 10.7522],
+            'athens': [37.9838, 23.7275],
+            'istanbul': [41.0082, 28.9784],
+            
+            // South America
+            'rio de janeiro': [-22.9068, -43.1729],
+            'são paulo': [-23.5505, -46.6333],
+            'buenos aires': [-34.6037, -58.3816],
+            'lima': [-12.0464, -77.0428],
+            'bogotá': [4.7110, -74.0721],
+            'santiago': [-33.4489, -70.6693],
+            
+            // Oceania
+            'sydney': [-33.8688, 151.2093],
+            'melbourne': [-37.8136, 144.9631],
+            'auckland': [-36.8485, 174.7633],
+            'queenstown': [-45.0312, 168.6626]
         };
         
-        // Return coordinates or default to Paris
-        return cityCoords[city] || cityCoords['Paris'];
+        // Try to find exact match
+        if (cityCoords[normalizedCity]) {
+            return cityCoords[normalizedCity];
+        }
+        
+        // Try to find partial match
+        for (const [cityName, coords] of Object.entries(cityCoords)) {
+            if (normalizedCity.includes(cityName) || cityName.includes(normalizedCity)) {
+                return coords;
+            }
+        }
+        
+        // Default to New York if not found
+        console.log(`[Places] City "${city}" not found in database, defaulting to New York`);
+        return cityCoords['new york'];
     }
     
     function addMarkersToMap() {

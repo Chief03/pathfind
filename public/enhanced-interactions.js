@@ -268,6 +268,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 <button class="fab-action" data-action="add-event">📅 Add Event</button>
                 <button class="fab-action" data-action="add-flight">✈️ Add Flight</button>
                 <button class="fab-action" data-action="add-stay">🏨 Add Stay</button>
+                <button class="fab-action" data-action="budget">💰 Set Budget</button>
                 <button class="fab-action" data-action="invite">👥 Invite Friend</button>
             `;
             menu.style.position = 'fixed';
@@ -288,11 +289,43 @@ document.addEventListener('DOMContentLoaded', function() {
                     const actionType = this.dataset.action;
                     // Trigger corresponding action
                     if (actionType === 'add-event') {
-                        document.getElementById('add-card-btn')?.click();
+                        // Switch to itinerary tab and open add event modal
+                        if (window.switchTab) window.switchTab('itinerary');
+                        setTimeout(() => {
+                            document.getElementById('add-card-btn')?.click();
+                        }, 300);
                     } else if (actionType === 'add-flight') {
-                        document.getElementById('add-flight-btn')?.click();
+                        // Switch to flights tab and open add flight modal
+                        if (window.switchTab) window.switchTab('flights');
+                        setTimeout(() => {
+                            document.getElementById('add-flight-btn')?.click();
+                        }, 300);
                     } else if (actionType === 'add-stay') {
-                        document.getElementById('add-stay-btn')?.click();
+                        // Switch to stay tab and open add stay modal
+                        if (window.switchTab) window.switchTab('stay');
+                        setTimeout(() => {
+                            document.getElementById('add-stay-btn')?.click();
+                        }, 300);
+                    } else if (actionType === 'budget') {
+                        // Switch to budget tab
+                        if (window.switchTab) window.switchTab('budget');
+                    } else if (actionType === 'invite') {
+                        // Open invite modal
+                        if (window.openInviteModal) {
+                            window.openInviteModal();
+                        } else {
+                            // Fallback to simple modal
+                            const inviteModal = document.getElementById('invite-modal');
+                            if (inviteModal) {
+                                inviteModal.classList.remove('hidden');
+                                // Set the trip code
+                                const tripData = JSON.parse(localStorage.getItem('currentTrip') || '{}');
+                                const inviteCodeEl = document.getElementById('invite-code');
+                                if (inviteCodeEl && tripData.id) {
+                                    inviteCodeEl.textContent = tripData.id;
+                                }
+                            }
+                        }
                     }
                     // Close menu
                     menu.remove();

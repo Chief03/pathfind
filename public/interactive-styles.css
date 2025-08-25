@@ -439,28 +439,34 @@ select:focus {
 /* Floating Action Button */
 .fab {
     position: fixed;
-    bottom: 80px;
-    right: 20px;
-    width: 56px;
-    height: 56px;
+    bottom: 30px;
+    right: 30px;
+    width: 60px;
+    height: 60px;
     border-radius: 50%;
-    background: #FF6B6B;  /* Bright coral red for high visibility */
-    background: linear-gradient(135deg, #FF6B6B 0%, #FF5252 100%);
+    background: #8B5CF6;  /* Purple to match screenshot */
+    background: linear-gradient(135deg, #9F7AEA 0%, #8B5CF6 100%);
     color: white;
-    border: 2px solid rgba(255, 255, 255, 0.3);
+    border: none;
     cursor: pointer;
-    box-shadow: 0 4px 20px rgba(255, 107, 107, 0.4), 0 2px 8px rgba(0, 0, 0, 0.2);
+    box-shadow: 0 4px 20px rgba(139, 92, 246, 0.4), 0 2px 8px rgba(0, 0, 0, 0.2);
     transition: all 0.3s ease;
-    z-index: 1000;
-    font-size: 24px;
-    font-weight: bold;
+    z-index: 9999;
+    font-size: 28px;
+    font-weight: 300;
+    display: flex;
+    align-items: center;
+    justify-content: center;
 }
 
 .fab:hover {
     transform: scale(1.1) rotate(90deg);
-    background: linear-gradient(135deg, #FF5252 0%, #FF4444 100%);
-    box-shadow: 0 6px 30px rgba(255, 107, 107, 0.6), 0 3px 12px rgba(0, 0, 0, 0.3);
-    border-color: rgba(255, 255, 255, 0.5);
+    background: linear-gradient(135deg, #A78BFA 0%, #9F7AEA 100%);
+    box-shadow: 0 6px 30px rgba(139, 92, 246, 0.6), 0 3px 12px rgba(0, 0, 0, 0.3);
+}
+
+.fab:active {
+    transform: scale(0.95);
 }
 
 /* Interactive Cards */

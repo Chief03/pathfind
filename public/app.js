@@ -1893,18 +1893,18 @@ window.openDateEditor = function() {
     // Get current trip data
     const tripData = JSON.parse(localStorage.getItem('currentTrip') || '{}');
     
-    // Show the date selector from landing page
-    const dateDropdown = document.querySelector('.date-dropdown');
-    const heroDateInput = document.getElementById('hero-date-input');
+    // Show the calendar dropdown from landing page
+    const calendarDropdown = document.getElementById('calendar-dropdown');
+    const heroDateInput = document.getElementById('hero-dates');
     
-    if (dateDropdown && heroDateInput) {
+    if (calendarDropdown) {
         // Position it as a modal
-        dateDropdown.style.position = 'fixed';
-        dateDropdown.style.top = '50%';
-        dateDropdown.style.left = '50%';
-        dateDropdown.style.transform = 'translate(-50%, -50%)';
-        dateDropdown.style.zIndex = '10000';
-        dateDropdown.style.boxShadow = '0 20px 60px rgba(0, 0, 0, 0.3)';
+        calendarDropdown.style.position = 'fixed';
+        calendarDropdown.style.top = '50%';
+        calendarDropdown.style.left = '50%';
+        calendarDropdown.style.transform = 'translate(-50%, -50%)';
+        calendarDropdown.style.zIndex = '10000';
+        calendarDropdown.style.boxShadow = '0 20px 60px rgba(0, 0, 0, 0.3)';
         
         // Add backdrop
         const backdrop = document.createElement('div');
@@ -1927,17 +1927,18 @@ window.openDateEditor = function() {
         if (endInput && tripData.endDate) endInput.value = tripData.endDate;
         
         // Show dropdown
-        dateDropdown.classList.remove('hidden');
+        calendarDropdown.classList.remove('hidden');
         
-        // Update apply button to save to trip
-        const applyBtn = dateDropdown.querySelector('.apply-dates-btn');
-        if (applyBtn) {
-            const newApplyBtn = applyBtn.cloneNode(true);
-            applyBtn.parentNode.replaceChild(newApplyBtn, applyBtn);
+        // Handle done button
+        const doneBtn = calendarDropdown.querySelector('.done-btn');
+        if (doneBtn) {
+            const newDoneBtn = doneBtn.cloneNode(true);
+            doneBtn.parentNode.replaceChild(newDoneBtn, doneBtn);
             
-            newApplyBtn.addEventListener('click', () => {
-                const newStartDate = startInput.value;
-                const newEndDate = endInput.value;
+            newDoneBtn.addEventListener('click', () => {
+                // Get selected dates from calendar
+                const newStartDate = window.selectedStartDate || tripData.startDate;
+                const newEndDate = window.selectedEndDate || tripData.endDate;
                 
                 if (newStartDate && newEndDate) {
                     // Update trip data
@@ -1971,8 +1972,8 @@ window.openDateEditor = function() {
                     }
                     
                     // Close modal
-                    dateDropdown.classList.add('hidden');
-                    dateDropdown.style = '';
+                    calendarDropdown.classList.add('hidden');
+                    calendarDropdown.style = '';
                     backdrop.remove();
                     
                     // Show success message
@@ -1983,10 +1984,20 @@ window.openDateEditor = function() {
             });
         }
         
+        // Handle close button
+        const closeBtn = calendarDropdown.querySelector('.close-calendar');
+        if (closeBtn) {
+            closeBtn.onclick = () => {
+                calendarDropdown.classList.add('hidden');
+                calendarDropdown.style = '';
+                backdrop.remove();
+            };
+        }
+        
         // Close on backdrop click
         backdrop.addEventListener('click', () => {
-            dateDropdown.classList.add('hidden');
-            dateDropdown.style = '';
+            calendarDropdown.classList.add('hidden');
+            calendarDropdown.style = '';
             backdrop.remove();
         });
     }
@@ -1997,7 +2008,7 @@ window.openTravelersEditor = function() {
     const tripData = JSON.parse(localStorage.getItem('currentTrip') || '{}');
     
     // Show the guest selector from landing page
-    const whoDropdown = document.querySelector('.who-dropdown');
+    const whoDropdown = document.getElementById('who-dropdown');
     
     if (whoDropdown) {
         // Position it as a modal
@@ -2025,72 +2036,55 @@ window.openTravelersEditor = function() {
         // Show dropdown
         whoDropdown.classList.remove('hidden');
         
-        // Add save button if not exists
-        let saveBtn = whoDropdown.querySelector('.save-travelers-btn');
-        if (!saveBtn) {
-            saveBtn = document.createElement('button');
-            saveBtn.className = 'save-travelers-btn';
-            saveBtn.textContent = 'Save Changes';
-            saveBtn.style.cssText = `
-                width: 100%;
-                padding: 14px;
-                background: var(--violet);
-                color: white;
-                border: none;
-                border-radius: 8px;
-                font-size: 15px;
-                font-weight: 600;
-                cursor: pointer;
-                margin-top: 16px;
-            `;
-            whoDropdown.appendChild(saveBtn);
+        // Use the apply button
+        const applyBtn = document.getElementById('apply-guests');
+        if (applyBtn) {
+            const newApplyBtn = applyBtn.cloneNode(true);
+            applyBtn.parentNode.replaceChild(newApplyBtn, applyBtn);
+            
+            newApplyBtn.addEventListener('click', () => {
+                // Get guest counts
+                const adultsCount = parseInt(document.getElementById('adults-count')?.textContent || '1');
+                const childrenCount = parseInt(document.getElementById('children-count')?.textContent || '0');
+                const infantsCount = parseInt(document.getElementById('infants-count')?.textContent || '0');
+                const petsCount = parseInt(document.getElementById('pets-count')?.textContent || '0');
+                const totalGuests = adultsCount + childrenCount;
+                
+                // Update trip data
+                tripData.travelers = totalGuests;
+                tripData.adults = adultsCount;
+                tripData.children = childrenCount;
+                tripData.infants = infantsCount;
+                tripData.pets = petsCount;
+                
+                // Format guest string
+                const parts = [];
+                if (adultsCount > 0) parts.push(`${adultsCount} ${adultsCount === 1 ? 'Adult' : 'Adults'}`);
+                if (childrenCount > 0) parts.push(`${childrenCount} ${childrenCount === 1 ? 'Child' : 'Children'}`);
+                if (infantsCount > 0) parts.push(`${infantsCount} ${infantsCount === 1 ? 'Infant' : 'Infants'}`);
+                if (petsCount > 0) parts.push(`${petsCount} ${petsCount === 1 ? 'Pet' : 'Pets'}`);
+                tripData.guests = parts.join(', ') || '0 Guests';
+                
+                // Save to localStorage
+                localStorage.setItem('currentTrip', JSON.stringify(tripData));
+                
+                // Update display
+                const travelerCountEl = document.getElementById('traveler-count');
+                if (travelerCountEl) {
+                    travelerCountEl.textContent = totalGuests;
+                }
+                
+                // Close modal
+                whoDropdown.classList.add('hidden');
+                whoDropdown.style = '';
+                backdrop.remove();
+                
+                // Show success message
+                if (window.addActivityToFeed) {
+                    window.addActivityToFeed('👥', `updated travelers to ${tripData.guests}`, null, 'update');
+                }
+            });
         }
-        
-        saveBtn.addEventListener('click', () => {
-            // Get current guest counts
-            const adultCount = parseInt(document.getElementById('adult-count')?.textContent || '0');
-            const childCount = parseInt(document.getElementById('child-count')?.textContent || '0');
-            const infantCount = parseInt(document.getElementById('infant-count')?.textContent || '0');
-            const petCount = parseInt(document.getElementById('pet-count')?.textContent || '0');
-            
-            const totalTravelers = adultCount + childCount + infantCount;
-            
-            // Update trip data
-            tripData.totalTravelers = totalTravelers;
-            tripData.guestSelection = {
-                adults: adultCount,
-                children: childCount,
-                infants: infantCount,
-                pets: petCount
-            };
-            
-            // Format guest string
-            const parts = [];
-            if (adultCount > 0) parts.push(`${adultCount} ${adultCount === 1 ? 'Adult' : 'Adults'}`);
-            if (childCount > 0) parts.push(`${childCount} ${childCount === 1 ? 'Child' : 'Children'}`);
-            if (infantCount > 0) parts.push(`${infantCount} ${infantCount === 1 ? 'Infant' : 'Infants'}`);
-            if (petCount > 0) parts.push(`${petCount} ${petCount === 1 ? 'Pet' : 'Pets'}`);
-            tripData.guests = parts.join(', ') || '0 Guests';
-            
-            // Save to localStorage
-            localStorage.setItem('currentTrip', JSON.stringify(tripData));
-            
-            // Update display
-            const travelerCountEl = document.getElementById('traveler-count');
-            if (travelerCountEl) {
-                travelerCountEl.textContent = totalTravelers;
-            }
-            
-            // Close modal
-            whoDropdown.classList.add('hidden');
-            whoDropdown.style = '';
-            backdrop.remove();
-            
-            // Show success message
-            if (window.addActivityToFeed) {
-                window.addActivityToFeed('👥', `updated travelers to ${tripData.guests}`, null, 'update');
-            }
-        });
         
         // Close on backdrop click
         backdrop.addEventListener('click', () => {

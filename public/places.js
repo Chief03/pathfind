@@ -309,31 +309,122 @@
         }
     }
     
+    function getLocationSpecificPlaces(city) {
+        const normalizedCity = city.toLowerCase();
+        
+        // Location-specific places database
+        const cityPlaces = {
+            'houston': {
+                restaurants: [
+                    { name: 'Pappadeaux Seafood Kitchen', description: 'Famous Houston seafood chain', rating: 4.6, price: '$$$' },
+                    { name: 'The Breakfast Klub', description: 'Soul food and breakfast classics', rating: 4.7, price: '$$' },
+                    { name: 'Xochi', description: 'Oaxacan cuisine in downtown Houston', rating: 4.8, price: '$$$' },
+                    { name: 'Ninfa\'s on Navigation', description: 'Original home of the fajita', rating: 4.5, price: '$$' },
+                    { name: 'Hugo\'s', description: 'Authentic regional Mexican cuisine', rating: 4.6, price: '$$$' }
+                ],
+                attractions: [
+                    { name: 'Space Center Houston', description: 'NASA\'s official visitor center', rating: 4.7, price: '$$' },
+                    { name: 'Houston Museum District', description: '19 museums in a walkable area', rating: 4.8, price: '$' },
+                    { name: 'Houston Zoo', description: '6,000+ animals on 55 acres', rating: 4.5, price: '$$' },
+                    { name: 'Buffalo Bayou Park', description: '160-acre green space', rating: 4.6, price: 'Free' },
+                    { name: 'The Galleria', description: 'Texas\' largest shopping center', rating: 4.4, price: 'Free' }
+                ]
+            },
+            'colorado': {
+                restaurants: [
+                    { name: 'The Fort Restaurant', description: 'Historic Colorado cuisine', rating: 4.5, price: '$$$' },
+                    { name: 'Snooze AM Eatery', description: 'Creative breakfast and brunch', rating: 4.6, price: '$$' },
+                    { name: 'Casa Bonita', description: 'Mexican restaurant and entertainment', rating: 4.2, price: '$$' },
+                    { name: 'Denver Biscuit Company', description: 'Giant biscuit sandwiches', rating: 4.7, price: '$$' },
+                    { name: 'The Buckhorn Exchange', description: 'Colorado\'s oldest restaurant', rating: 4.4, price: '$$$' }
+                ],
+                attractions: [
+                    { name: 'Rocky Mountain National Park', description: 'Stunning mountain landscapes', rating: 4.9, price: '$' },
+                    { name: 'Red Rocks Amphitheatre', description: 'Iconic outdoor concert venue', rating: 4.8, price: '$' },
+                    { name: 'Garden of the Gods', description: 'Dramatic red rock formations', rating: 4.8, price: 'Free' },
+                    { name: 'Pikes Peak', description: 'America\'s Mountain', rating: 4.7, price: '$$' },
+                    { name: 'Denver Botanic Gardens', description: '24 acres of themed gardens', rating: 4.6, price: '$' }
+                ]
+            },
+            'bali': {
+                restaurants: [
+                    { name: 'Locavore', description: 'Award-winning Indonesian-European fusion', rating: 4.8, price: '$$$' },
+                    { name: 'Warung Babi Guling Ibu Oka', description: 'Famous Balinese suckling pig', rating: 4.6, price: '$' },
+                    { name: 'La Lucciola', description: 'Beachfront Italian dining', rating: 4.5, price: '$$$' },
+                    { name: 'Bebek Bengil', description: 'Crispy duck in Ubud', rating: 4.4, price: '$$' },
+                    { name: 'Sardine', description: 'Fresh seafood in rice paddies', rating: 4.7, price: '$$$' }
+                ],
+                attractions: [
+                    { name: 'Tanah Lot Temple', description: 'Iconic sea temple', rating: 4.6, price: '$' },
+                    { name: 'Tegallalang Rice Terraces', description: 'Stunning terraced landscapes', rating: 4.7, price: '$' },
+                    { name: 'Sacred Monkey Forest', description: 'Nature reserve and temple complex', rating: 4.5, price: '$' },
+                    { name: 'Uluwatu Temple', description: 'Clifftop temple with ocean views', rating: 4.8, price: '$' },
+                    { name: 'Mount Batur', description: 'Active volcano for sunrise hikes', rating: 4.7, price: '$$' }
+                ]
+            },
+            'nigeria': {
+                restaurants: [
+                    { name: 'Yellow Chilli', description: 'Modern Nigerian cuisine', rating: 4.5, price: '$$' },
+                    { name: 'Nkoyo', description: 'Traditional Nigerian dishes', rating: 4.6, price: '$$' },
+                    { name: 'Terra Kulture', description: 'Cultural center with restaurant', rating: 4.4, price: '$$' },
+                    { name: 'The Jollof Pot', description: 'Authentic West African cuisine', rating: 4.3, price: '$' },
+                    { name: 'Sky Restaurant & Bar', description: 'Rooftop dining in Lagos', rating: 4.5, price: '$$$' }
+                ],
+                attractions: [
+                    { name: 'Nike Art Gallery', description: 'Largest art gallery in West Africa', rating: 4.7, price: 'Free' },
+                    { name: 'Lekki Conservation Centre', description: 'Nature reserve with canopy walk', rating: 4.5, price: '$' },
+                    { name: 'National Museum Lagos', description: 'Nigerian art and history', rating: 4.3, price: '$' },
+                    { name: 'Olumo Rock', description: 'Historic rock formation in Abeokuta', rating: 4.6, price: '$' },
+                    { name: 'Yankari National Park', description: 'Wildlife and hot springs', rating: 4.4, price: '$$' }
+                ]
+            }
+        };
+        
+        // Check for exact city match
+        if (cityPlaces[normalizedCity]) {
+            return cityPlaces[normalizedCity];
+        }
+        
+        // Check for partial matches
+        for (const [cityName, places] of Object.entries(cityPlaces)) {
+            if (normalizedCity.includes(cityName) || cityName.includes(normalizedCity)) {
+                return places;
+            }
+        }
+        
+        // Return null to use default templates
+        return null;
+    }
+    
     function generateMockPlaces(category) {
         const baseCoords = getCityCoordinates(currentCity);
         const places = [];
         
-        const placeTemplates = {
+        // Get location-specific templates based on current city
+        const placeTemplates = getLocationSpecificPlaces(currentCity);
+        
+        // If no specific places found, use generic templates
+        const defaultTemplates = {
             restaurants: [
-                { name: 'Le Petit Bistro', description: 'Cozy French restaurant with authentic cuisine', rating: 4.5, price: '$$' },
-                { name: 'Trattoria Bella', description: 'Traditional Italian dishes in a warm atmosphere', rating: 4.7, price: '$$$' },
-                { name: 'Sushi Master', description: 'Fresh sushi and Japanese specialties', rating: 4.6, price: '$$$' },
-                { name: 'The Garden Table', description: 'Farm-to-table dining experience', rating: 4.4, price: '$$' },
-                { name: 'Spice Route', description: 'Exotic flavors from around the world', rating: 4.3, price: '$$' }
+                { name: `${currentCity} Bistro`, description: `Popular local restaurant in ${currentCity}`, rating: 4.5, price: '$$' },
+                { name: `Downtown ${currentCity} Grill`, description: `Traditional dishes from ${currentCity} region`, rating: 4.7, price: '$$$' },
+                { name: `${currentCity} Seafood House`, description: `Fresh seafood in the heart of ${currentCity}`, rating: 4.6, price: '$$$' },
+                { name: `The ${currentCity} Table`, description: `Farm-to-table dining in ${currentCity}`, rating: 4.4, price: '$$' },
+                { name: `${currentCity} Spice Kitchen`, description: `International cuisine in ${currentCity}`, rating: 4.3, price: '$$' }
             ],
             attractions: [
-                { name: 'Historic Museum', description: 'Journey through centuries of local history', rating: 4.5, price: '$' },
-                { name: 'City Tower', description: 'Panoramic views from the observation deck', rating: 4.8, price: '$$' },
-                { name: 'Art Gallery', description: 'Contemporary and classical art exhibitions', rating: 4.6, price: '$' },
-                { name: 'Botanical Gardens', description: 'Beautiful gardens with rare plant species', rating: 4.7, price: '$' },
-                { name: 'Old Town Square', description: 'Historic center with charming architecture', rating: 4.9, price: 'Free' }
+                { name: `${currentCity} History Museum`, description: `Discover the rich history of ${currentCity}`, rating: 4.5, price: '$' },
+                { name: `${currentCity} Observation Tower`, description: `Panoramic views of ${currentCity} skyline`, rating: 4.8, price: '$$' },
+                { name: `${currentCity} Art Museum`, description: `Local and international art in ${currentCity}`, rating: 4.6, price: '$' },
+                { name: `${currentCity} Botanical Gardens`, description: `Beautiful gardens in ${currentCity}`, rating: 4.7, price: '$' },
+                { name: `Old ${currentCity}`, description: `Historic district of ${currentCity}`, rating: 4.9, price: 'Free' }
             ],
             hotels: [
-                { name: 'Grand Plaza Hotel', description: 'Luxury accommodation in the city center', rating: 4.6, price: '$$$$' },
-                { name: 'Boutique Inn', description: 'Charming boutique hotel with personalized service', rating: 4.5, price: '$$$' },
-                { name: 'City Hostel', description: 'Budget-friendly accommodation for travelers', rating: 4.2, price: '$' },
-                { name: 'Business Suites', description: 'Modern amenities for business travelers', rating: 4.4, price: '$$$' },
-                { name: 'Riverside Resort', description: 'Peaceful retreat by the water', rating: 4.7, price: '$$$$' }
+                { name: `${currentCity} Grand Hotel`, description: `Luxury accommodation in ${currentCity} center`, rating: 4.6, price: '$$$$' },
+                { name: `${currentCity} Boutique Inn`, description: `Charming boutique hotel in ${currentCity}`, rating: 4.5, price: '$$$' },
+                { name: `${currentCity} Backpackers`, description: `Budget-friendly hostel in ${currentCity}`, rating: 4.2, price: '$' },
+                { name: `${currentCity} Business Suites`, description: `Modern business hotel in ${currentCity}`, rating: 4.4, price: '$$$' },
+                { name: `${currentCity} Resort & Spa`, description: `Luxury resort near ${currentCity}`, rating: 4.7, price: '$$$$' }
             ],
             cafes: [
                 { name: 'Morning Brew', description: 'Artisan coffee and fresh pastries', rating: 4.6, price: '$' },
@@ -365,15 +456,18 @@
             ]
         };
         
+        // Use location-specific templates or fall back to defaults
+        const templates = placeTemplates || defaultTemplates;
+        
         // Select templates based on category
         let selectedTemplates = [];
         if (category === 'all') {
             // Mix from all categories
-            Object.values(placeTemplates).forEach(templates => {
-                selectedTemplates.push(...templates.slice(0, 2));
+            Object.values(templates).forEach(categoryTemplates => {
+                selectedTemplates.push(...categoryTemplates.slice(0, 2));
             });
         } else {
-            selectedTemplates = placeTemplates[category] || [];
+            selectedTemplates = templates[category] || [];
         }
         
         // Create place objects with coordinates

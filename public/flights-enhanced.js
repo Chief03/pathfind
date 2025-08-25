@@ -903,7 +903,7 @@
     }
     
     function setupRealtimeUpdates() {
-        if (typeof io === 'undefined') return;
+        if (typeof io === 'undefined' || window.location.hostname !== 'localhost') return;
         
         const socket = io();
         

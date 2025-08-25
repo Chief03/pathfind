@@ -56,7 +56,7 @@
         setupEventListeners();
         
         // Connect to socket if available
-        if (window.io && currentTripId) {
+        if (window.io && currentTripId && window.location.hostname === 'localhost') {
             setupSocket();
         }
 
@@ -437,7 +437,7 @@
 
         // Socket setup
         function setupSocket() {
-            socket = window.io ? window.io() : null;
+            socket = (window.io && window.location.hostname === 'localhost') ? window.io() : null;
             if (!socket) return;
             
             socket.on('stays-updated', (data) => {

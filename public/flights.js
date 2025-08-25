@@ -83,8 +83,8 @@
             return;
         }
         
-        // Setup socket connection if available
-        if (typeof io !== 'undefined') {
+        // Setup socket connection if available (development only)
+        if (typeof io !== 'undefined' && window.location.hostname === 'localhost') {
             socket = window.socket || io();
             setupSocketListeners();
         }

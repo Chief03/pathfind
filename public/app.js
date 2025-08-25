@@ -321,17 +321,15 @@ async function joinTrip() {
 }
 
 function connectToTrip(tripId) {
-    // Only try to connect if Socket.io is available
-    if (typeof io !== 'undefined') {
+    // Only try to connect if Socket.io is available and in development
+    if (typeof io !== 'undefined' && window.location.hostname === 'localhost') {
         try {
-            // Configure Socket.io with proper URL
-            const socketUrl = window.location.hostname === 'localhost' 
-                ? 'http://localhost:3001' 
-                : window.location.origin;
+            // Configure Socket.io with proper URL (development only)
+            const socketUrl = 'http://localhost:3001';
             
             socket = io(socketUrl, {
                 transports: ['websocket', 'polling'],
-                reconnection: false, // Disable auto-reconnection in production
+                reconnection: false, // Disable auto-reconnection
                 timeout: 5000
             });
             

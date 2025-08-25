@@ -1305,7 +1305,17 @@
     </div>
 
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
-    <script src="/socket.io/socket.io.js"></script>
+    <!-- Production configuration -->
+    <script src="production-config.js"></script>
+    <!-- Socket.io disabled in production -->
+    <script>
+        // Only load socket.io in development
+        if (window.location.hostname === 'localhost') {
+            const script = document.createElement('script');
+            script.src = '/socket.io/socket.io.js';
+            document.head.appendChild(script);
+        }
+    </script>
     <script src="auth.js?v=5"></script>
     <script src="auth-modal.js?v=1"></script>
     <script src="calendar.js?v=5"></script>

@@ -25,8 +25,8 @@ class FlightsPage {
         // Cache DOM elements
         this.cacheElements();
         
-        // Setup socket if available
-        if (typeof io !== 'undefined') {
+        // Setup socket if available (development only)
+        if (typeof io !== 'undefined' && window.location.hostname === 'localhost') {
             this.socket = window.socket || io();
             this.setupSocketListeners();
         }

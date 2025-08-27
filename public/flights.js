@@ -92,15 +92,7 @@
         // Get trip ID
         currentTripId = localStorage.getItem('currentTripId');
         
-        // Load flights with feature check
-        if (typeof loadFlights === 'function') {
-            loadFlights().catch(err => {
-                console.error('[Flights] Failed to load flights:', err);
-                showError('Failed to load flights. Please refresh the page.');
-            });
-        } else {
-            console.error('[Flights] loadFlights function not defined');
-        }
+        // Load flights will be called after function definitions
         
         // Add button handlers
         if (elements.addEmptyBtn) {
@@ -651,8 +643,8 @@
         renderFlights: renderFlights  // Expose renderFlights for testing
     };
     
-    // Also expose loadFlights directly for backward compatibility
-    window.loadFlights = loadFlights;
+    // Defer exposing loadFlights until after it's defined
+    // This will be done after the return statement
     
     // Quick add functions
     window.quickAddFlight = function(type) {
@@ -738,4 +730,17 @@
             window.showToast('Sample flights added! You can edit or delete them anytime.');
         }
     };
+    
+    // Expose loadFlights globally for backward compatibility
+    window.loadFlights = loadFlights;
+    
+    // Expose a flag to indicate flights system is loaded
+    window.flightsLoaded = true;
+    
+    // Initial load of flights after all functions are defined
+    if (document.getElementById('flights-tab')) {
+        loadFlights().catch(err => {
+            console.error('[Flights] Failed to load flights:', err);
+        });
+    }
 })();

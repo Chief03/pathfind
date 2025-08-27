@@ -1,7 +1,8 @@
-import { type ClientSchema, a, defineData } from '@aws-amplify/backend';
-import { fetchEventsFunction } from '../functions/fetch-events/resource.js';
-import { validateDestinationFunction } from '../functions/validate-destination/resource.js';
-import { createTripFunction } from '../functions/create-trip/resource.js';
+import { a, defineData } from '@aws-amplify/backend';
+// Temporarily disabled for auth testing
+// import { fetchEventsFunction } from '../functions/fetch-events/resource.ts';
+// import { validateDestinationFunction } from '../functions/validate-destination/resource.js';
+// import { createTripFunction } from '../functions/create-trip/resource.js';
 
 /*========== The application schema ==========*/
 const schema = a.schema({
@@ -141,45 +142,45 @@ const schema = a.schema({
       index('city').sortKeys(['date', 'time']).queryField('eventsByCity'),
     ]),
 
-  // Custom queries and mutations
+  // Custom queries and mutations - temporarily disabled for auth testing
   
-  // Validate a destination to ensure it's a real city
-  validateDestination: a
-    .query()
-    .arguments({
-      destination: a.string().required(),
-    })
-    .returns(a.json())
-    .authorization(allow => [allow.publicApiKey(), allow.authenticated()])
-    .handler(a.handler.function(validateDestinationFunction)),
+  // // Validate a destination to ensure it's a real city
+  // validateDestination: a
+  //   .query()
+  //   .arguments({
+  //     destination: a.string().required(),
+  //   })
+  //   .returns(a.json())
+  //   .authorization(allow => [allow.publicApiKey(), allow.authenticated()])
+  //   .handler(a.handler.function(validateDestinationFunction)),
 
-  // Create a trip with validated destinations
-  createValidatedTrip: a
-    .mutation()
-    .arguments({
-      name: a.string().required(),
-      departureCity: a.string(),
-      destinationCity: a.string().required(),
-      startDate: a.date().required(),
-      endDate: a.date().required(),
-      groupSize: a.integer(),
-      description: a.string(),
-    })
-    .returns(a.ref('Trip'))
-    .authorization(allow => [allow.publicApiKey(), allow.authenticated()])
-    .handler(a.handler.function(createTripFunction)),
+  // // Create a trip with validated destinations
+  // createValidatedTrip: a
+  //   .mutation()
+  //   .arguments({
+  //     name: a.string().required(),
+  //     departureCity: a.string(),
+  //     destinationCity: a.string().required(),
+  //     startDate: a.date().required(),
+  //     endDate: a.date().required(),
+  //     groupSize: a.integer(),
+  //     description: a.string(),
+  //   })
+  //   .returns(a.ref('Trip'))
+  //   .authorization(allow => [allow.publicApiKey(), allow.authenticated()])
+  //   .handler(a.handler.function(createTripFunction)),
 
-  // Fetch events for a city
-  fetchEvents: a
-    .query()
-    .arguments({
-      city: a.string().required(),
-      startDate: a.string().required(),
-      endDate: a.string().required(),
-    })
-    .returns(a.json())
-    .authorization(allow => [allow.publicApiKey(), allow.authenticated()])
-    .handler(a.handler.function(fetchEventsFunction)),
+  // // Fetch events for a city
+  // fetchEvents: a
+  //   .query()
+  //   .arguments({
+  //     city: a.string().required(),
+  //     startDate: a.string().required(),
+  //     endDate: a.string().required(),
+  //   })
+  //   .returns(a.json())
+  //   .authorization(allow => [allow.publicApiKey(), allow.authenticated()])
+  //   .handler(a.handler.function(fetchEventsFunction)),
 });
 
 export const data = defineData({

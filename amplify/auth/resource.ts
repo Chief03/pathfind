@@ -21,6 +21,10 @@ export const auth = defineAuth({
       required: true,
       mutable: true,
     },
+    nickname: {
+      required: false,
+      mutable: true,
+    },
     phoneNumber: {
       required: false,
       mutable: true,

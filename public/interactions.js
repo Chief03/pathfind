@@ -71,7 +71,7 @@
     // Initialize all enhancements
     function init() {
         addLoadingAnimations();
-        addTooltips();
+        // addTooltips(); // Disabled - user doesn't like glass hover effects
         addKeyboardShortcuts();
         addSmoothScrolling();
         addButtonEnhancements();
@@ -96,11 +96,8 @@
         };
         
         function showLoader() {
-            const loader = document.createElement('div');
-            loader.className = 'global-loader';
-            loader.innerHTML = '<div class="loader-spinner"></div>';
-            document.body.appendChild(loader);
-            return loader;
+            // DISABLED - No loader to prevent cursor-following overlay appearance
+            return null;
         }
         
         function hideLoader(loader) {
@@ -416,10 +413,45 @@
     window.showNotification = showNotification;
     window.createConfetti = createConfetti;
     
+    // Add global cursor overlay disabler
+    function disableCursorOverlays() {
+        // Remove any existing cursor-following elements
+        const overlaySelectors = [
+            '.loader-spinner',
+            '.global-loader',
+            '.custom-tooltip',
+            '[class*="cursor"]',
+            '[class*="pointer"]',
+            '[class*="follow"]',
+            '[class*="glass"]',
+            '[class*="frosted"]'
+        ];
+        
+        overlaySelectors.forEach(selector => {
+            try {
+                const elements = document.querySelectorAll(selector);
+                elements.forEach(el => {
+                    if (el) {
+                        el.style.display = 'none';
+                        el.remove();
+                    }
+                });
+            } catch (e) {
+                // Ignore selector errors
+            }
+        });
+        
+        console.log('[Interactions] Cursor overlays disabled');
+    }
+    
     // Initialize when DOM is ready
     if (document.readyState === 'loading') {
-        document.addEventListener('DOMContentLoaded', init);
+        document.addEventListener('DOMContentLoaded', () => {
+            disableCursorOverlays();
+            init();
+        });
     } else {
+        disableCursorOverlays();
         init();
     }
 })();

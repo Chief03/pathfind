@@ -1,5 +1,10 @@
-let currentUser = null;
-let authToken = null;
+// Check if variables are already declared
+if (typeof currentUser === 'undefined') {
+    window.currentUser = null;
+}
+if (typeof authToken === 'undefined') {
+    window.authToken = null;
+}
 
 document.addEventListener('DOMContentLoaded', () => {
     initAuthListeners();
@@ -52,7 +57,8 @@ function initAuthListeners() {
         switchToSignup.addEventListener('click', (e) => {
             e.preventDefault();
             showSignupPage();
-    });
+        });
+    }
 }
 
 function checkAuthStatus() {
@@ -76,23 +82,29 @@ function updateUIForAuth(isAuthenticated) {
     const userMenu = document.getElementById('user-menu');
     
     if (isAuthenticated && currentUser) {
-        navLogin.classList.add('hidden');
-        navSignup.classList.add('hidden');
-        navTrips.classList.remove('hidden');
-        navProfile.classList.remove('hidden');
-        userMenu.classList.remove('hidden');
-        
-        // Update user menu
-        const userName = userMenu.querySelector('.user-name');
-        const userAvatar = userMenu.querySelector('.user-avatar');
-        userName.textContent = currentUser.firstName + ' ' + currentUser.lastName;
-        userAvatar.textContent = (currentUser.firstName[0] + currentUser.lastName[0]).toUpperCase();
+        if (navLogin) navLogin.classList.add('hidden');
+        if (navSignup) navSignup.classList.add('hidden');
+        if (navTrips) navTrips.classList.remove('hidden');
+        if (navProfile) navProfile.classList.remove('hidden');
+        if (userMenu) {
+            userMenu.classList.remove('hidden');
+            
+            // Update user menu
+            const userName = userMenu.querySelector('.user-name');
+            const userAvatar = userMenu.querySelector('.user-avatar');
+            if (userName && currentUser.firstName && currentUser.lastName) {
+                userName.textContent = currentUser.firstName + ' ' + currentUser.lastName;
+            }
+            if (userAvatar && currentUser.firstName && currentUser.lastName) {
+                userAvatar.textContent = (currentUser.firstName[0] + currentUser.lastName[0]).toUpperCase();
+            }
+        }
     } else {
-        navLogin.classList.remove('hidden');
-        navSignup.classList.remove('hidden');
-        navTrips.classList.add('hidden');
-        navProfile.classList.add('hidden');
-        userMenu.classList.add('hidden');
+        if (navLogin) navLogin.classList.remove('hidden');
+        if (navSignup) navSignup.classList.remove('hidden');
+        if (navTrips) navTrips.classList.add('hidden');
+        if (navProfile) navProfile.classList.add('hidden');
+        if (userMenu) userMenu.classList.add('hidden');
     }
 }
 

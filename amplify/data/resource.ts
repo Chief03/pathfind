@@ -3,6 +3,28 @@ import { fetchEventsFunction } from '../functions/fetch-events/resource';
 
 /*========== The application schema ==========*/
 const schema = a.schema({
+  // UserProfile model - stores additional user information
+  UserProfile: a
+    .model({
+      userId: a.id().required(), // Cognito User ID
+      email: a.email().required(),
+      firstName: a.string().required(),
+      lastName: a.string().required(),
+      nickname: a.string(),
+      phoneNumber: a.phone(),
+      birthdate: a.date(),
+      profilePicture: a.url(),
+      bio: a.string(),
+      preferences: a.json(), // Store user preferences as JSON
+      createdAt: a.datetime(),
+      lastLoginAt: a.datetime(),
+      isEmailVerified: a.boolean().default(false),
+    })
+    .authorization(allow => [
+      allow.ownerDefinedIn('userId'), // Only the user can access their own profile
+      allow.authenticated().to(['read']), // Other authenticated users can read basic info
+    ]),
+  
   // Trip model - the main entity for trip planning
   Trip: a
     .model({

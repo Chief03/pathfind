@@ -1,0 +1,38 @@
+/* Disable all frosted glass / backdrop blur effects */
+
+/* Remove backdrop filters globally */
+* {
+    backdrop-filter: none !important;
+    -webkit-backdrop-filter: none !important;
+}
+
+/* Remove any blur filters */
+* {
+    filter: none !important;
+}
+
+/* Disable any cursor-following elements */
+.loader-spinner,
+.global-loader,
+.custom-tooltip,
+*[class*="cursor"],
+*[class*="pointer"],
+*[class*="follow"],
+*[class*="overlay"][style*="position: fixed"],
+*[class*="glass"],
+*[class*="frosted"] {
+    display: none !important;
+    visibility: hidden !important;
+    opacity: 0 !important;
+}
+
+/* Ensure no fixed positioned elements can follow cursor */
+*[style*="position: fixed"][style*="transform"] {
+    position: static !important;
+}
+
+/* Disable any hover overlays */
+*:hover::before,
+*:hover::after {
+    display: none !important;
+}

@@ -247,6 +247,28 @@ function showCreateForm() {
 }
 
 async function createNewTrip() {
+    console.log('[CreateTrip] Starting trip creation process...');
+    
+    // MANDATORY AUTHENTICATION CHECK - Use the proper auth guard
+    if (!window.authGuard) {
+        alert('Authentication system not available. Please refresh the page.');
+        return;
+    }
+    
+    // Enforce authentication before any trip creation
+    if (!(await window.authGuard.requireAuth('create a trip'))) {
+        console.log('[CreateTrip] Authentication required - auth modal shown');
+        return; // requireAuth will show the auth modal
+    }
+    
+    // Double-check user is actually authenticated
+    if (!window.authGuard.isUserAuthenticated()) {
+        alert('Please log in to create trips.');
+        return;
+    }
+    
+    console.log('[CreateTrip] User authenticated, proceeding with form validation');
+
     const tripName = document.getElementById('trip-name-input').value.trim() || 'My Adventure';
     const tripLocation = document.getElementById('trip-location').value.trim();
     const creatorName = document.getElementById('creator-name').value.trim();
@@ -263,11 +285,21 @@ async function createNewTrip() {
     const locationData = await geocodeLocation(tripLocation);
     
     try {
+        // Get authentication token for request
+        const authToken = getAuthTokenFromGuard();
+        if (!authToken) {
+            throw new Error('Authentication token not found. Please log in again.');
+        }
+        
         const response = await fetch('/api/trips', {
             method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
+            headers: { 
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${authToken}`  // Include auth token
+            },
             body: JSON.stringify({ 
                 name: tripName,
+                destinationCity: tripLocation,  // Use consistent field name
                 location: tripLocation,
                 coordinates: locationData,
                 startDate: startDate,
@@ -275,15 +307,43 @@ async function createNewTrip() {
             })
         });
         
+        if (!response.ok) {
+            if (response.status === 401 || response.status === 403) {
+                throw new Error('Authentication required. Please log in.');
+            }
+            throw new Error('Failed to create trip. Please try again.');
+        }
+        
         const trip = await response.json();
         currentTrip = trip;
         
+        console.log('[CreateTrip] Authenticated trip created successfully:', trip);
         connectToTrip(trip.id);
         showTripPlanner();
     } catch (error) {
-        console.error('Error creating trip:', error);
-        alert('Failed to create trip. Please try again.');
+        console.error('[CreateTrip] Error creating trip:', error);
+        
+        if (error.message && (
+            error.message.includes('Authentication') ||
+            error.message.includes('login')
+        )) {
+            alert('Please log in to create trips.');
+            // Show auth modal
+            if (window.authGuard) {
+                window.authGuard.requireAuth('create a trip');
+            }
+        } else {
+            alert('Failed to create trip. Please try again.');
+        }
     }
+}
+
+// Helper function to get auth token from auth guard
+function getAuthTokenFromGuard() {
+    if (window.authGuard && window.authGuard.currentUser) {
+        return window.authGuard.currentUser.token || localStorage.getItem('authToken');
+    }
+    return localStorage.getItem('authToken') || null;
 }
 
 function showJoinForm() {
@@ -294,6 +354,20 @@ function showJoinForm() {
 }
 
 async function joinTrip() {
+    // Check authentication before allowing trip joining
+    if (window.amplifyAuth && !window.amplifyAuth.isAuthenticated()) {
+        console.log('[JoinTrip] User not authenticated, showing auth modal');
+        
+        // Show notification about needing to sign up
+        if (window.amplifyAuth.showNotification) {
+            window.amplifyAuth.showNotification('Please sign up or log in to join a trip', 'info');
+        }
+        
+        // Show auth modal
+        window.amplifyAuth.showAuthModal();
+        return;
+    }
+
     const tripCode = document.getElementById('trip-code').value.trim();
     const userName = document.getElementById('user-name').value.trim();
     
@@ -1211,28 +1285,33 @@ function initializeDatePicker() {
         }
     });
     
-    // Hero search functionality - go directly to trip dashboard
+    // Hero search functionality - SECURED VERSION
     const searchBtn = document.getElementById('hero-search');
     if (searchBtn) {
-        searchBtn.addEventListener('click', async () => {
-            const destination = document.getElementById('hero-destination').value;
-            const dates = document.getElementById('hero-dates').value;
-            const guests = document.getElementById('hero-who').value;
+        // Remove this handler and let the secured trip-hero handler take over
+        console.log('[App.js] Removing unsecured hero-search handler - delegating to trip-hero.js');
+        
+        // Don't add any event listener here - let trip-hero.js handle it securely
+        searchBtn.setAttribute('data-secured-by', 'trip-hero');
+        
+        // If someone tries to use this old code path, block it
+        window.legacyHeroHandler = async () => {
+            console.error('[App.js] SECURITY: Attempted use of deprecated unsecured hero handler');
             
-            if (!destination || !dates) {
-                alert('Please select a destination and dates');
+            if (!window.authGuard) {
+                alert('Authentication system not available. Please refresh the page.');
                 return;
             }
             
-            // Skip login and go directly to trip dashboard with itinerary
-            // Create a temporary trip data
-            const tripData = {
-                id: 'temp-' + Date.now(),
-                name: `Trip to ${destination}`,
-                destination: destination,
-                dates: dates,
-                guests: guests,
-                createdAt: new Date().toISOString()
+            if (!(await window.authGuard.requireAuth('create a trip'))) {
+                return; // Auth modal will be shown
+            }
+            
+            alert('This feature requires the secured trip handler. Please refresh the page.');
+        };
+        
+        // Old unsecured handler removed for security
+        console.log('[App.js] Unsecured handler blocked - trip-hero.js will handle securely');
             };
             
             // Store trip data

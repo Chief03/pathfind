@@ -1,0 +1,520 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Pathfind - Simple Auth Test</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+        
+        .container {
+            background: white;
+            border-radius: 20px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+            padding: 40px;
+            width: 400px;
+            max-width: 90%;
+        }
+        
+        h1 {
+            text-align: center;
+            color: #333;
+            margin-bottom: 30px;
+        }
+        
+        .form-group {
+            margin-bottom: 20px;
+        }
+        
+        label {
+            display: block;
+            margin-bottom: 5px;
+            color: #666;
+            font-size: 14px;
+        }
+        
+        input {
+            width: 100%;
+            padding: 12px;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            font-size: 16px;
+        }
+        
+        input:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+        
+        button {
+            width: 100%;
+            padding: 14px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            border-radius: 8px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            margin-top: 10px;
+        }
+        
+        button:hover {
+            opacity: 0.9;
+        }
+        
+        button:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+        
+        .message {
+            margin-top: 20px;
+            padding: 12px;
+            border-radius: 8px;
+            font-size: 14px;
+        }
+        
+        .error {
+            background: #fee;
+            color: #e74c3c;
+            border: 1px solid #fcc;
+        }
+        
+        .success {
+            background: #efe;
+            color: #27ae60;
+            border: 1px solid #cfc;
+        }
+        
+        .info {
+            background: #e6f3ff;
+            color: #0066cc;
+            border: 1px solid #b3d9ff;
+        }
+        
+        .hidden {
+            display: none;
+        }
+        
+        .tabs {
+            display: flex;
+            margin-bottom: 30px;
+            border-bottom: 2px solid #eee;
+        }
+        
+        .tab {
+            flex: 1;
+            padding: 12px;
+            text-align: center;
+            cursor: pointer;
+            border: none;
+            background: none;
+            color: #999;
+            font-size: 16px;
+            font-weight: 600;
+            transition: all 0.3s;
+        }
+        
+        .tab.active {
+            color: #667eea;
+            border-bottom: 3px solid #667eea;
+            margin-bottom: -2px;
+        }
+        
+        .form {
+            display: none;
+        }
+        
+        .form.active {
+            display: block;
+        }
+        
+        #status {
+            text-align: center;
+            padding: 20px;
+            background: #f8f9fa;
+            border-radius: 8px;
+            margin-bottom: 20px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🚀 Pathfind Auth</h1>
+        
+        <div id="status">
+            <p>Loading Amplify...</p>
+        </div>
+        
+        <div class="tabs">
+            <button class="tab active" id="signup-tab">Sign Up</button>
+            <button class="tab" id="signin-tab">Sign In</button>
+            <button class="tab" id="verify-tab">Verify</button>
+        </div>
+        
+        <!-- Sign Up Form -->
+        <div id="signup-form" class="form active">
+            <form id="signup">
+                <div class="form-group">
+                    <label for="signup-email">Email</label>
+                    <input type="email" id="signup-email" required>
+                </div>
+                <div class="form-group">
+                    <label for="signup-password">Password</label>
+                    <input type="password" id="signup-password" required placeholder="Min 8 chars, upper, lower, number, symbol">
+                </div>
+                <div class="form-group">
+                    <label for="signup-firstname">First Name</label>
+                    <input type="text" id="signup-firstname" required>
+                </div>
+                <div class="form-group">
+                    <label for="signup-lastname">Last Name</label>
+                    <input type="text" id="signup-lastname" required>
+                </div>
+                <div class="form-group">
+                    <label for="signup-nickname">Nickname <span style="color: #999; font-size: 12px;">(Optional)</span></label>
+                    <input type="text" id="signup-nickname" placeholder="How should we call you?">
+                </div>
+                <button type="submit">Create Account</button>
+            </form>
+        </div>
+        
+        <!-- Sign In Form -->
+        <div id="signin-form" class="form">
+            <form id="signin">
+                <div class="form-group">
+                    <label for="signin-email">Email</label>
+                    <input type="email" id="signin-email" required>
+                </div>
+                <div class="form-group">
+                    <label for="signin-password">Password</label>
+                    <input type="password" id="signin-password" required>
+                </div>
+                <button type="submit">Sign In</button>
+            </form>
+        </div>
+        
+        <!-- Verify Form -->
+        <div id="verify-form" class="form">
+            <form id="verify">
+                <div class="form-group">
+                    <label for="verify-email">Email</label>
+                    <input type="email" id="verify-email" required>
+                </div>
+                <div class="form-group">
+                    <label for="verify-code">Verification Code</label>
+                    <input type="text" id="verify-code" required placeholder="Check your email">
+                </div>
+                <button type="submit">Verify Account</button>
+            </form>
+        </div>
+        
+        <!-- Dashboard -->
+        <div id="dashboard" class="hidden">
+            <h2 style="text-align: center; margin-bottom: 20px;">Welcome! ✈️</h2>
+            <div id="user-info" style="text-align: center; padding: 20px; background: #f8f9fa; border-radius: 8px;"></div>
+            <button id="signout" style="margin-top: 20px;">Sign Out</button>
+            <button id="goto-app" style="margin-top: 10px; background: #28a745;">Go to Main App</button>
+        </div>
+        
+        <div id="message"></div>
+    </div>
+    
+    <script type="module">
+        // Import only what we need from Amplify
+        import { Amplify } from 'https://cdn.jsdelivr.net/npm/aws-amplify@6.15.5/+esm';
+        
+        const AuthAPI = {
+            async signUp(email, password, firstName, lastName, nickname) {
+                const { signUp } = await import('https://cdn.jsdelivr.net/npm/aws-amplify@6.15.5/auth/+esm');
+                const userAttributes = {
+                    email: email,
+                    given_name: firstName,
+                    family_name: lastName
+                };
+                
+                // Add nickname only if provided
+                if (nickname && nickname.trim()) {
+                    userAttributes.nickname = nickname;
+                }
+                
+                return signUp({
+                    username: email,
+                    password: password,
+                    options: {
+                        userAttributes: userAttributes
+                    }
+                });
+            },
+            
+            async confirmSignUp(email, code) {
+                const { confirmSignUp } = await import('https://cdn.jsdelivr.net/npm/aws-amplify@6.15.5/auth/+esm');
+                return confirmSignUp({
+                    username: email,
+                    confirmationCode: code
+                });
+            },
+            
+            async signIn(email, password) {
+                const { signIn } = await import('https://cdn.jsdelivr.net/npm/aws-amplify@6.15.5/auth/+esm');
+                return signIn({
+                    username: email,
+                    password: password
+                });
+            },
+            
+            async signOut() {
+                const { signOut } = await import('https://cdn.jsdelivr.net/npm/aws-amplify@6.15.5/auth/+esm');
+                return signOut();
+            },
+            
+            async getCurrentUser() {
+                const { getCurrentUser } = await import('https://cdn.jsdelivr.net/npm/aws-amplify@6.15.5/auth/+esm');
+                return getCurrentUser();
+            },
+            
+            async fetchUserAttributes() {
+                const { fetchUserAttributes } = await import('https://cdn.jsdelivr.net/npm/aws-amplify@6.15.5/auth/+esm');
+                return fetchUserAttributes();
+            }
+        };
+        
+        // State
+        let isAmplifyConfigured = false;
+        
+        // UI Elements
+        const statusEl = document.getElementById('status');
+        const messageEl = document.getElementById('message');
+        const dashboardEl = document.getElementById('dashboard');
+        const userInfoEl = document.getElementById('user-info');
+        
+        // Forms
+        const signupForm = document.getElementById('signup-form');
+        const signinForm = document.getElementById('signin-form');
+        const verifyForm = document.getElementById('verify-form');
+        
+        // Tabs
+        const signupTab = document.getElementById('signup-tab');
+        const signinTab = document.getElementById('signin-tab');
+        const verifyTab = document.getElementById('verify-tab');
+        
+        // Tab switching
+        function switchTab(tabName) {
+            // Remove active from all
+            document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+            document.querySelectorAll('.form').forEach(f => f.classList.remove('active'));
+            
+            // Add active to selected
+            if (tabName === 'signup') {
+                signupTab.classList.add('active');
+                signupForm.classList.add('active');
+            } else if (tabName === 'signin') {
+                signinTab.classList.add('active');
+                signinForm.classList.add('active');
+            } else if (tabName === 'verify') {
+                verifyTab.classList.add('active');
+                verifyForm.classList.add('active');
+            }
+            
+            // Clear messages
+            messageEl.innerHTML = '';
+        }
+        
+        signupTab.addEventListener('click', () => switchTab('signup'));
+        signinTab.addEventListener('click', () => switchTab('signin'));
+        verifyTab.addEventListener('click', () => switchTab('verify'));
+        
+        // Show message
+        function showMessage(text, type = 'info') {
+            messageEl.innerHTML = `<div class="message ${type}">${text}</div>`;
+        }
+        
+        // Show dashboard
+        async function showDashboard() {
+            try {
+                const user = await AuthAPI.getCurrentUser();
+                const attributes = await AuthAPI.fetchUserAttributes();
+                
+                document.querySelector('.tabs').classList.add('hidden');
+                document.querySelectorAll('.form').forEach(f => f.classList.add('hidden'));
+                dashboardEl.classList.remove('hidden');
+                
+                const displayName = attributes.nickname || `${attributes.given_name || ''} ${attributes.family_name || ''}`.trim();
+                userInfoEl.innerHTML = `
+                    <p><strong>User ID:</strong> ${user.userId}</p>
+                    <p><strong>Email:</strong> ${attributes.email || user.username}</p>
+                    <p><strong>Name:</strong> ${attributes.given_name || ''} ${attributes.family_name || ''}</p>
+                    ${attributes.nickname ? `<p><strong>Nickname:</strong> ${attributes.nickname}</p>` : ''}
+                    <p style="margin-top: 10px; font-size: 18px;">Welcome, <strong>${displayName}</strong>! 👋</p>
+                `;
+                
+                statusEl.innerHTML = '<p style="color: #27ae60;">✓ Authenticated</p>';
+            } catch (error) {
+                console.error('Dashboard error:', error);
+                showSignIn();
+            }
+        }
+        
+        // Show sign in
+        function showSignIn() {
+            document.querySelector('.tabs').classList.remove('hidden');
+            dashboardEl.classList.add('hidden');
+            switchTab('signin');
+            statusEl.innerHTML = '<p>Ready to authenticate</p>';
+        }
+        
+        // Initialize Amplify
+        async function initializeAmplify() {
+            try {
+                const response = await fetch('/amplify_outputs.json');
+                const outputs = await response.json();
+                
+                // Configure without OAuth to avoid the error
+                const config = {
+                    Auth: {
+                        Cognito: {
+                            userPoolId: outputs.auth.user_pool_id,
+                            userPoolClientId: outputs.auth.user_pool_client_id,
+                            identityPoolId: outputs.auth.identity_pool_id,
+                            region: outputs.auth.aws_region,
+                            passwordPolicy: outputs.auth.password_policy
+                        }
+                    }
+                };
+                
+                Amplify.configure(config);
+                isAmplifyConfigured = true;
+                
+                // Check if user is logged in
+                try {
+                    await AuthAPI.getCurrentUser();
+                    await showDashboard();
+                } catch {
+                    statusEl.innerHTML = '<p>Ready to authenticate</p>';
+                }
+                
+            } catch (error) {
+                console.error('Init error:', error);
+                statusEl.innerHTML = '<p style="color: #e74c3c;">Failed to initialize</p>';
+                showMessage('Failed to initialize. Check console.', 'error');
+            }
+        }
+        
+        // Sign Up Handler
+        document.getElementById('signup').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            if (!isAmplifyConfigured) {
+                showMessage('Amplify not initialized', 'error');
+                return;
+            }
+            
+            const email = document.getElementById('signup-email').value;
+            const password = document.getElementById('signup-password').value;
+            const firstName = document.getElementById('signup-firstname').value;
+            const lastName = document.getElementById('signup-lastname').value;
+            const nickname = document.getElementById('signup-nickname').value;
+            
+            try {
+                const result = await AuthAPI.signUp(email, password, firstName, lastName, nickname);
+                console.log('Sign up result:', result);
+                
+                if (result.nextStep?.signUpStep === 'CONFIRM_SIGN_UP') {
+                    showMessage('Account created! Check your email for verification code.', 'success');
+                    switchTab('verify');
+                    document.getElementById('verify-email').value = email;
+                }
+            } catch (error) {
+                console.error('Sign up error:', error);
+                showMessage(error.message || 'Sign up failed', 'error');
+            }
+        });
+        
+        // Sign In Handler
+        document.getElementById('signin').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            if (!isAmplifyConfigured) {
+                showMessage('Amplify not initialized', 'error');
+                return;
+            }
+            
+            const email = document.getElementById('signin-email').value;
+            const password = document.getElementById('signin-password').value;
+            
+            try {
+                const result = await AuthAPI.signIn(email, password);
+                console.log('Sign in result:', result);
+                
+                if (result.isSignedIn) {
+                    showMessage('Sign in successful!', 'success');
+                    await showDashboard();
+                } else if (result.nextStep) {
+                    showMessage(`Additional step required: ${result.nextStep.signInStep}`, 'info');
+                }
+            } catch (error) {
+                console.error('Sign in error:', error);
+                showMessage(error.message || 'Sign in failed', 'error');
+            }
+        });
+        
+        // Verify Handler
+        document.getElementById('verify').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            if (!isAmplifyConfigured) {
+                showMessage('Amplify not initialized', 'error');
+                return;
+            }
+            
+            const email = document.getElementById('verify-email').value;
+            const code = document.getElementById('verify-code').value;
+            
+            try {
+                const result = await AuthAPI.confirmSignUp(email, code);
+                console.log('Verify result:', result);
+                
+                if (result.isSignUpComplete) {
+                    showMessage('Email verified! You can now sign in.', 'success');
+                    switchTab('signin');
+                    document.getElementById('signin-email').value = email;
+                }
+            } catch (error) {
+                console.error('Verify error:', error);
+                showMessage(error.message || 'Verification failed', 'error');
+            }
+        });
+        
+        // Sign Out Handler
+        document.getElementById('signout').addEventListener('click', async () => {
+            try {
+                await AuthAPI.signOut();
+                showMessage('Signed out successfully', 'success');
+                showSignIn();
+            } catch (error) {
+                console.error('Sign out error:', error);
+                showMessage('Sign out failed', 'error');
+            }
+        });
+        
+        // Go to App Handler
+        document.getElementById('goto-app').addEventListener('click', () => {
+            window.location.href = '/';
+        });
+        
+        // Initialize on load
+        initializeAmplify();
+    </script>
+</body>
+</html>

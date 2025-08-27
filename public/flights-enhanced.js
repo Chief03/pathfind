@@ -37,9 +37,17 @@
         // Setup event listeners
         setupEventListeners();
         
-        // Load initial data
+        // Load initial data after all functions are defined
         if (currentTripId) {
-            loadFlights();
+            // Use setTimeout to defer execution until after function definitions
+            setTimeout(() => {
+                if (typeof loadFlights === 'function') {
+                    loadFlights();
+                } else {
+                    console.warn('[Flights Enhanced] loadFlights not yet available, retrying...');
+                    setTimeout(() => loadFlights(), 100);
+                }
+            }, 0);
         } else {
             showEmptyState('no-trip');
         }

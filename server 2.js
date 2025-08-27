@@ -9,10 +9,6 @@ const jwt = require('jsonwebtoken');
 const cookieParser = require('cookie-parser');
 const EventsAPI = require('./services/events-api');
 
-// Database setup
-const sequelize = require('./config/database');
-const User = require('./models/User');
-
 const app = express();
 const server = http.createServer(app);
 
@@ -86,9 +82,8 @@ function authenticateToken(req, res, next) {
     });
 }
 
-// Import routes
+// Import flight routes
 const flightRoutes = require('./routes/flights.routes');
-const authRoutes = require('./routes/auth.routes');
 
 // Routes
 app.get('/', (req, res) => {
@@ -102,7 +97,6 @@ app.get('/test-flights-enhanced.html', (req, res) => {
 
 // API Routes
 app.use('/api', flightRoutes);
-app.use('/api/auth', authRoutes);
 
 // Auth routes
 app.post('/api/auth/signup', async (req, res) => {
@@ -235,12 +229,64 @@ async function validateCity(cityName) {
     }
 }
 
-// Anonymous trip creation endpoint - DISABLED for security
-// All trip creation now requires authentication
+// Anonymous trip creation (for demo/MVP)
 app.post('/api/trips/create-anonymous', async (req, res) => {
-    return res.status(401).json({ 
-        error: 'Authentication required. Please sign up or log in to create trips.' 
-    });
+    try {
+        // Validate destination city (required)
+        const destValidation = await validateCity(req.body.destinationCity);
+        if (!destValidation.isValid) {
+            return res.status(400).json({ 
+                error: destValidation.error || 'Invalid destination city' 
+            });
+        }
+
+        // Validate departure city if provided
+        let depValidation = null;
+        if (req.body.departureCity) {
+            depValidation = await validateCity(req.body.departureCity);
+            if (!depValidation.isValid) {
+                return res.status(400).json({ 
+                    error: `Departure city: ${depValidation.error}` 
+                });
+            }
+        }
+
+        const tripId = uuidv4();
+        const shareCode = generateTripCode();
+        
+        const trip = {
+            id: tripId,
+            shareCode: shareCode,
+            name: req.body.name || 'New Trip',
+            departureCity: depValidation ? depValidation.normalizedName : '',
+            destinationCity: destValidation.normalizedName,
+            departureCoords: depValidation ? depValidation.coordinates : null,
+            destinationCoords: destValidation.coordinates,
+            startDate: req.body.startDate || null,
+            endDate: req.body.endDate || null,
+            groupSize: req.body.groupSize || 2,
+            description: req.body.description || '',
+            creatorId: 'anonymous',
+            participants: [{
+                id: 'anonymous',
+                email: 'guest@pathfind.app',
+                name: 'Trip Creator',
+                role: 'creator'
+            }],
+            itinerary: [],
+            budget: {},
+            places: [],
+            createdAt: new Date()
+        };
+        
+        trips.set(tripId, trip);
+        tripCodes.set(shareCode, tripId); // Map code to trip ID
+        
+        res.json(trip);
+    } catch (error) {
+        console.error('Trip creation error:', error);
+        res.status(500).json({ error: 'Failed to create trip' });
+    }
 });
 
 // Trip routes
@@ -1254,14 +1300,6 @@ io.on('connection', (socket) => {
     });
 });
 
-// Sync database and start server
-sequelize.sync({ alter: true }).then(() => {
-    console.log('[Database] All models synchronized');
-    
-    server.listen(PORT, () => {
-        console.log(`Pathfind server running on port ${PORT}`);
-    });
-}).catch(err => {
-    console.error('[Database] Failed to sync:', err);
-    process.exit(1);
+server.listen(PORT, () => {
+    console.log(`Pathfind server running on port ${PORT}`);
 });

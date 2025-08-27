@@ -28,6 +28,10 @@ class PlacesAutocomplete {
         this.cache = new Map();
         this.lastQuery = '';
         this.isOpen = false;
+        this.mouseX = 0;
+        this.mouseY = 0;
+        this.pendingSelection = null;
+        this.userInteracting = false;
         
         // Initialize
         this.init();
@@ -105,7 +109,38 @@ class PlacesAutocomplete {
         
         // Prevent dropdown from closing on interaction
         this.dropdown.addEventListener('mousedown', (e) => {
+            console.log('[PlacesAutocomplete] 🖱️ Dropdown mousedown - preventing default');
+            this.userInteracting = true;
             e.preventDefault();
+            e.stopPropagation();
+        });
+        
+        // Additional safety: prevent dropdown from closing on any mouse interaction
+        this.dropdown.addEventListener('mouseup', (e) => {
+            console.log('[PlacesAutocomplete] 🖱️ Dropdown mouseup');
+            e.stopPropagation();
+            // Reset interaction flag after a delay
+            setTimeout(() => {
+                this.userInteracting = false;
+            }, 100);
+        });
+        
+        this.dropdown.addEventListener('mouseenter', () => {
+            console.log('[PlacesAutocomplete] 🖱️ Mouse entered dropdown');
+            this.userInteracting = true;
+        });
+        
+        this.dropdown.addEventListener('mouseleave', () => {
+            console.log('[PlacesAutocomplete] 🖱️ Mouse left dropdown');
+            setTimeout(() => {
+                this.userInteracting = false;
+            }, 100);
+        });
+        
+        // Track mouse position for better blur handling
+        document.addEventListener('mousemove', (e) => {
+            this.mouseX = e.clientX;
+            this.mouseY = e.clientY;
         });
     }
     
@@ -178,20 +213,50 @@ class PlacesAutocomplete {
     }
     
     handleBlur(e) {
+        console.log('[PlacesAutocomplete] 🔀 BLUR event triggered');
+        
+        // Don't close if user is currently interacting
+        if (this.userInteracting) {
+            console.log('[PlacesAutocomplete] 🚫 Blur cancelled - user is interacting');
+            return;
+        }
+        
         // Don't close if clicking on dropdown or its children
         if (e.relatedTarget && this.dropdown.contains(e.relatedTarget)) {
+            console.log('[PlacesAutocomplete] 🚫 Blur cancelled - clicking on dropdown');
             return;
         }
         
         // Delay to allow click on dropdown items
-        // Increased delay for better click handling
+        // Increased delay significantly for better click handling
         setTimeout(() => {
-            // Only close if the click wasn't on the dropdown
-            if (!this.dropdown.contains(document.activeElement) && 
-                !this.wrapper.contains(document.activeElement)) {
-                this.close();
+            // Check again if user is interacting
+            if (this.userInteracting) {
+                console.log('[PlacesAutocomplete] 🚫 Close cancelled - user still interacting');
+                return;
             }
-        }, 150);
+            
+            // Check if user is currently clicking on dropdown
+            if (document.activeElement && this.dropdown.contains(document.activeElement)) {
+                console.log('[PlacesAutocomplete] 🚫 Close cancelled - dropdown still focused');
+                return;
+            }
+            
+            // Check if mouse is still over dropdown (for pending clicks)
+            const dropdownRect = this.dropdown.getBoundingClientRect();
+            const isMouseOverDropdown = this.mouseX >= dropdownRect.left && 
+                                      this.mouseX <= dropdownRect.right && 
+                                      this.mouseY >= dropdownRect.top && 
+                                      this.mouseY <= dropdownRect.bottom;
+            
+            if (isMouseOverDropdown) {
+                console.log('[PlacesAutocomplete] 🚫 Close cancelled - mouse over dropdown');
+                return;
+            }
+            
+            console.log('[PlacesAutocomplete] ❌ Closing dropdown after blur delay');
+            this.close();
+        }, 500); // Even longer delay for click handling
     }
     
     navigate(direction) {
@@ -265,6 +330,7 @@ class PlacesAutocomplete {
     }
     
     updateDropdown() {
+        console.log('[PlacesAutocomplete] 🔄 Updating dropdown with', this.predictions.length, 'predictions');
         this.dropdown.innerHTML = '';
         
         if (this.predictions.length === 0) {
@@ -300,14 +366,49 @@ class PlacesAutocomplete {
             item.setAttribute('aria-selected', index === this.selectedIndex);
             item.setAttribute('tabindex', '0');
             
+            // Multiple event handlers for maximum compatibility
+            let clickHandled = false;
+            
             item.addEventListener('mousedown', (e) => {
+                console.log('[PlacesAutocomplete] 🖱️ MOUSEDOWN detected on:', prediction.description);
                 e.preventDefault(); // Prevent blur event
                 e.stopPropagation(); // Stop event bubbling
+                
+                // Set a flag to handle selection on mouseup if click fails
+                this.pendingSelection = prediction;
+            });
+            
+            item.addEventListener('mouseup', (e) => {
+                console.log('[PlacesAutocomplete] 🖱️ MOUSEUP detected on:', prediction.description);
+                e.preventDefault();
+                e.stopPropagation();
+                
+                // If click hasn't been handled, handle it here
+                if (!clickHandled && this.pendingSelection === prediction) {
+                    console.log('[PlacesAutocomplete] ✅ MOUSEUP SUCCESS - Selecting:', prediction.description);
+                    this.selectPrediction(prediction);
+                    clickHandled = true;
+                }
             });
             
             item.addEventListener('click', (e) => {
                 e.preventDefault();
                 e.stopPropagation();
+                console.log('[PlacesAutocomplete] ✅ CLICK SUCCESS - Item clicked:', prediction.description);
+                console.log('[PlacesAutocomplete] Event details:', {
+                    target: e.target.tagName,
+                    currentTarget: e.currentTarget.className,
+                    timestamp: Date.now()
+                });
+                this.selectPrediction(prediction);
+                clickHandled = true;
+            });
+            
+            // Also handle touch events for mobile
+            item.addEventListener('touchend', (e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                console.log('[PlacesAutocomplete] Item touched:', prediction.description);
                 this.selectPrediction(prediction);
             });
             
@@ -422,6 +523,8 @@ class PlacesAutocomplete {
     }
     
     showFallbackSuggestions(query) {
+        console.log('[PlacesAutocomplete] 📋 Showing fallback suggestions for query:', query);
+        
         // Provide static suggestions when API fails
         const fallbackSuggestions = [
             { description: 'Colorado, USA', place_id: 'fallback_colorado' },

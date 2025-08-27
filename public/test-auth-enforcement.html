@@ -1,0 +1,264 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test Authentication Enforcement</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        .test-section {
+            border: 1px solid #ccc;
+            padding: 15px;
+            margin: 10px 0;
+            border-radius: 5px;
+        }
+        .success { background-color: #d4edda; border-color: #c3e6cb; }
+        .error { background-color: #f8d7da; border-color: #f5c6cb; }
+        .warning { background-color: #fff3cd; border-color: #ffeeba; }
+        button {
+            padding: 10px 15px;
+            margin: 5px;
+            border: none;
+            border-radius: 3px;
+            cursor: pointer;
+        }
+        .btn-primary { background-color: #007bff; color: white; }
+        .btn-danger { background-color: #dc3545; color: white; }
+        #results {
+            margin-top: 20px;
+        }
+    </style>
+</head>
+<body>
+    <h1>🔐 Authentication Enforcement Test</h1>
+    <p>This page tests that all trip creation is properly blocked for unauthenticated users.</p>
+
+    <div class="test-section">
+        <h3>Test 1: Hero Section Trip Creation</h3>
+        <p>Tests the main hero section "Start a Trip" functionality</p>
+        <button class="btn-primary" onclick="testHeroTripCreation()">Test Hero Trip Creation</button>
+        <div id="hero-test-result"></div>
+    </div>
+
+    <div class="test-section">
+        <h3>Test 2: Direct API Call to Anonymous Endpoint</h3>
+        <p>Tests direct calls to /api/trips/create-anonymous (should be blocked)</p>
+        <button class="btn-danger" onclick="testAnonymousAPICall()">Test Anonymous API</button>
+        <div id="anonymous-test-result"></div>
+    </div>
+
+    <div class="test-section">
+        <h3>Test 3: Direct API Call to Regular Endpoint</h3>
+        <p>Tests direct calls to /api/trips without authentication (should be blocked)</p>
+        <button class="btn-danger" onclick="testRegularAPICall()">Test Regular API</button>
+        <div id="regular-test-result"></div>
+    </div>
+
+    <div class="test-section">
+        <h3>Test 4: AuthGuard Status</h3>
+        <p>Check if AuthGuard is properly detecting unauthenticated state</p>
+        <button class="btn-primary" onclick="testAuthGuardStatus()">Test AuthGuard Status</button>
+        <div id="authguard-test-result"></div>
+    </div>
+
+    <div id="results"></div>
+
+    <!-- Load necessary scripts -->
+    <script src="auth-guard.js"></script>
+    <script src="trip-hero.js"></script>
+
+    <script>
+        const results = [];
+
+        function logResult(testName, success, message) {
+            results.push({ testName, success, message, timestamp: new Date() });
+            console.log(`[TEST] ${testName}: ${success ? 'PASS' : 'FAIL'} - ${message}`);
+        }
+
+        async function testHeroTripCreation() {
+            const resultDiv = document.getElementById('hero-test-result');
+            resultDiv.innerHTML = '<p>Testing...</p>';
+
+            try {
+                // Simulate the trip creation process
+                if (!window.authGuard) {
+                    resultDiv.innerHTML = '<div class="error">❌ AuthGuard not available</div>';
+                    logResult('Hero Trip Creation', false, 'AuthGuard not available');
+                    return;
+                }
+
+                const testTripData = {
+                    name: 'Test Trip',
+                    destinationCity: 'New York',
+                    startDate: '2024-01-15',
+                    endDate: '2024-01-20',
+                    groupSize: 2
+                };
+
+                // This should trigger the auth guard
+                const authRequired = await window.authGuard.requireAuth('create a trip');
+                
+                if (!authRequired) {
+                    resultDiv.innerHTML = '<div class="success">✅ PASS - Authentication properly required</div>';
+                    logResult('Hero Trip Creation', true, 'Authentication properly blocked trip creation');
+                } else {
+                    resultDiv.innerHTML = '<div class="error">❌ FAIL - Authentication bypass detected</div>';
+                    logResult('Hero Trip Creation', false, 'Authentication was bypassed');
+                }
+
+            } catch (error) {
+                resultDiv.innerHTML = `<div class="error">❌ Error: ${error.message}</div>`;
+                logResult('Hero Trip Creation', false, error.message);
+            }
+        }
+
+        async function testAnonymousAPICall() {
+            const resultDiv = document.getElementById('anonymous-test-result');
+            resultDiv.innerHTML = '<p>Testing...</p>';
+
+            try {
+                const response = await fetch('/api/trips/create-anonymous', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        name: 'Test Anonymous Trip',
+                        destinationCity: 'Test City',
+                        startDate: '2024-01-15',
+                        endDate: '2024-01-20'
+                    })
+                });
+
+                if (response.status === 401) {
+                    resultDiv.innerHTML = '<div class="success">✅ PASS - Anonymous endpoint properly blocked (401)</div>';
+                    logResult('Anonymous API Call', true, 'Anonymous endpoint returned 401 as expected');
+                } else if (response.ok) {
+                    resultDiv.innerHTML = '<div class="error">❌ FAIL - Anonymous endpoint allowed trip creation</div>';
+                    logResult('Anonymous API Call', false, 'Anonymous endpoint allowed trip creation');
+                } else {
+                    resultDiv.innerHTML = `<div class="warning">⚠️ Unexpected response: ${response.status}</div>`;
+                    logResult('Anonymous API Call', false, `Unexpected response: ${response.status}`);
+                }
+
+            } catch (error) {
+                resultDiv.innerHTML = `<div class="error">❌ Error: ${error.message}</div>`;
+                logResult('Anonymous API Call', false, error.message);
+            }
+        }
+
+        async function testRegularAPICall() {
+            const resultDiv = document.getElementById('regular-test-result');
+            resultDiv.innerHTML = '<p>Testing...</p>';
+
+            try {
+                const response = await fetch('/api/trips', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        name: 'Test Regular Trip',
+                        destinationCity: 'Test City',
+                        startDate: '2024-01-15',
+                        endDate: '2024-01-20'
+                    })
+                });
+
+                if (response.status === 401) {
+                    resultDiv.innerHTML = '<div class="success">✅ PASS - Regular endpoint properly blocked (401)</div>';
+                    logResult('Regular API Call', true, 'Regular endpoint returned 401 as expected');
+                } else if (response.ok) {
+                    resultDiv.innerHTML = '<div class="error">❌ FAIL - Regular endpoint allowed trip creation without auth</div>';
+                    logResult('Regular API Call', false, 'Regular endpoint allowed trip creation without auth');
+                } else {
+                    resultDiv.innerHTML = `<div class="warning">⚠️ Unexpected response: ${response.status}</div>`;
+                    logResult('Regular API Call', false, `Unexpected response: ${response.status}`);
+                }
+
+            } catch (error) {
+                resultDiv.innerHTML = `<div class="error">❌ Error: ${error.message}</div>`;
+                logResult('Regular API Call', false, error.message);
+            }
+        }
+
+        async function testAuthGuardStatus() {
+            const resultDiv = document.getElementById('authguard-test-result');
+            resultDiv.innerHTML = '<p>Testing...</p>';
+
+            try {
+                if (!window.authGuard) {
+                    resultDiv.innerHTML = '<div class="error">❌ FAIL - AuthGuard not available</div>';
+                    logResult('AuthGuard Status', false, 'AuthGuard not available');
+                    return;
+                }
+
+                // Wait a moment for auth guard to initialize
+                await new Promise(resolve => setTimeout(resolve, 1000));
+
+                const isAuthenticated = window.authGuard.isUserAuthenticated();
+                const hasCurrentUser = !!window.authGuard.getCurrentUser();
+                const amplifyConfigured = window.authGuard.amplifyConfigured;
+
+                const status = {
+                    isAuthenticated,
+                    hasCurrentUser,
+                    amplifyConfigured
+                };
+
+                if (!isAuthenticated && !hasCurrentUser) {
+                    resultDiv.innerHTML = `<div class="success">✅ PASS - Properly detected unauthenticated state<br>
+                        Status: ${JSON.stringify(status, null, 2)}</div>`;
+                    logResult('AuthGuard Status', true, 'Properly detected unauthenticated state');
+                } else {
+                    resultDiv.innerHTML = `<div class="error">❌ FAIL - Incorrectly detected authenticated state<br>
+                        Status: ${JSON.stringify(status, null, 2)}</div>`;
+                    logResult('AuthGuard Status', false, 'Incorrectly detected authenticated state');
+                }
+
+            } catch (error) {
+                resultDiv.innerHTML = `<div class="error">❌ Error: ${error.message}</div>`;
+                logResult('AuthGuard Status', false, error.message);
+            }
+        }
+
+        // Auto-run all tests when page loads
+        window.onload = async function() {
+            console.log('🔐 Starting authentication enforcement tests...');
+            
+            // Wait for scripts to load
+            await new Promise(resolve => setTimeout(resolve, 2000));
+            
+            // Run all tests
+            await testAuthGuardStatus();
+            await new Promise(resolve => setTimeout(resolve, 500));
+            
+            await testHeroTripCreation();
+            await new Promise(resolve => setTimeout(resolve, 500));
+            
+            await testAnonymousAPICall();
+            await new Promise(resolve => setTimeout(resolve, 500));
+            
+            await testRegularAPICall();
+            
+            // Display summary
+            const resultsDiv = document.getElementById('results');
+            const passCount = results.filter(r => r.success).length;
+            const failCount = results.length - passCount;
+            
+            resultsDiv.innerHTML = `
+                <div class="test-section ${failCount === 0 ? 'success' : 'error'}">
+                    <h3>📊 Test Summary</h3>
+                    <p><strong>Passed:</strong> ${passCount}/${results.length}</p>
+                    <p><strong>Failed:</strong> ${failCount}/${results.length}</p>
+                    ${failCount === 0 ? 
+                        '<p>🎉 All authentication enforcement tests passed!</p>' : 
+                        '<p>❌ Some tests failed - authentication bypass possible!</p>'
+                    }
+                </div>
+            `;
+        };
+    </script>
+</body>
+</html>

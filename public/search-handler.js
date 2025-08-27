@@ -22,11 +22,32 @@
         searchBtn.parentNode.replaceChild(newSearchBtn, searchBtn);
         
         // Add new click handler
-        newSearchBtn.addEventListener('click', (e) => {
+        newSearchBtn.addEventListener('click', async (e) => {
             e.preventDefault();
             e.stopPropagation();
             
-            console.log('[SearchHandler] Search clicked');
+            console.log('[SearchHandler] Search clicked - REDIRECTING TO TRIP-HERO HANDLER');
+            
+            // SECURITY: Delegate all trip creation to the secured trip-hero handler
+            // This ensures consistent authentication enforcement
+            if (window.handleStartTrip && typeof window.handleStartTrip === 'function') {
+                console.log('[SearchHandler] Delegating to secured trip-hero handler');
+                return await window.handleStartTrip(e);
+            }
+            
+            // Fallback authentication check if trip-hero handler not available
+            if (!window.authGuard) {
+                alert('Authentication system not available. Please refresh the page.');
+                return;
+            }
+            
+            if (!(await window.authGuard.requireAuth('create a trip'))) {
+                console.log('[SearchHandler] Authentication required - showing auth modal');
+                return;
+            }
+            
+            console.log('[SearchHandler] WARNING - Trip-hero handler not available, blocking action for security');
+            alert('Trip creation system not available. Please refresh the page.');
             
             const tripNameEl = document.getElementById('hero-trip-name');
             const customTripCodeEl = document.getElementById('hero-trip-code');

@@ -144,6 +144,26 @@
         e.preventDefault();
         console.log('[TripHero] Starting trip creation...');
         
+        // MANDATORY AUTHENTICATION CHECK - Block all trip creation without login
+        if (!window.authGuard) {
+            showError('Authentication system not available. Please refresh the page.');
+            return;
+        }
+        
+        // Enforce authentication before any trip creation
+        if (!(await window.authGuard.requireAuth('create a trip'))) {
+            console.log('[TripHero] Authentication required - showing auth modal');
+            return; // requireAuth will show the auth modal
+        }
+        
+        // Verify user is actually authenticated
+        if (!window.authGuard.isUserAuthenticated()) {
+            showError('Please log in to create trips.');
+            return;
+        }
+        
+        console.log('[TripHero] User authenticated, proceeding with trip creation');
+        
         // Get form data from hero search
         const destination = getSearchFieldValue('hero-destination');
         const dates = getSelectedDates();
@@ -178,6 +198,20 @@
         } catch (error) {
             console.error('[TripHero] Trip creation failed:', error);
             
+            // Check if error is authentication related
+            if (error.message && (
+                error.message.includes('Authentication required') ||
+                error.message.includes('authenticate') ||
+                error.message.includes('login')
+            )) {
+                showError('Please log in to create trips.');
+                // Show auth modal
+                if (window.authGuard) {
+                    window.authGuard.requireAuth('create a trip');
+                }
+                return;
+            }
+            
             // Show specific error message about invalid city
             let errorMessage = 'Failed to create trip. Please try again.';
             if (error.message) {
@@ -210,6 +244,13 @@
     async function handleJoinTrip(e) {
         e.preventDefault();
         console.log('[TripHero] Joining trip...');
+        
+        // Check authentication before allowing trip joining
+        if (window.authGuard && !(await window.authGuard.requireAuth('join a trip'))) {
+            console.log('[TripHero] User not authenticated, showing auth modal');
+            hideJoinTripModal();
+            return;
+        }
         
         const tripCode = document.getElementById('trip-code-input').value.trim().toUpperCase();
         
@@ -263,20 +304,62 @@
     }
     
     async function createTrip(tripData) {
-        const response = await fetch('/api/trips/create-anonymous', {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json'
-            },
-            body: JSON.stringify(tripData)
-        });
-        
-        if (!response.ok) {
-            const error = await response.json();
-            throw new Error(error.error || 'Failed to create trip');
+        // ABSOLUTE REQUIREMENT: Authentication guard must be available
+        if (!window.authGuard) {
+            throw new Error('Authentication system not initialized. Please refresh the page.');
         }
         
-        return response.json();
+        // ABSOLUTE REQUIREMENT: User must be authenticated
+        if (!window.authGuard.isUserAuthenticated()) {
+            throw new Error('Authentication required to create trips. Please log in.');
+        }
+        
+        console.log('[TripHero] Creating authenticated trip...');
+        
+        try {
+            // Use ONLY authenticated trip creation - no fallbacks
+            const result = await window.authGuard.createAuthenticatedTrip(tripData);
+            console.log('[TripHero] Authenticated trip creation successful:', result);
+            return result;
+        } catch (error) {
+            console.error('[TripHero] Authenticated trip creation failed:', error);
+            
+            // If the GraphQL/Amplify approach fails, try the authenticated server endpoint
+            if (!window.authGuard.isUserAuthenticated()) {
+                throw new Error('Authentication lost during trip creation. Please log in again.');
+            }
+            
+            // Try authenticated server endpoint as backup
+            console.log('[TripHero] Trying server-based authenticated trip creation...');
+            const response = await fetch('/api/trips', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${getAuthToken()}`  // Must provide auth token
+                },
+                body: JSON.stringify(tripData)
+            });
+            
+            if (!response.ok) {
+                if (response.status === 401 || response.status === 403) {
+                    throw new Error('Authentication required to create trips. Please log in.');
+                }
+                throw new Error('Failed to create trip. Please try again.');
+            }
+            
+            const serverTrip = await response.json();
+            console.log('[TripHero] Server-based authenticated trip creation successful:', serverTrip);
+            return serverTrip;
+        }
+    }
+    
+    // Helper function to get authentication token
+    function getAuthToken() {
+        // Try to get token from auth guard or localStorage
+        if (window.authGuard && window.authGuard.currentUser) {
+            return window.authGuard.currentUser.token || localStorage.getItem('authToken');
+        }
+        return localStorage.getItem('authToken') || null;
     }
     
     function copyTripCode() {
@@ -497,5 +580,8 @@
         alert(message);
     }
     
-    console.log('[TripHero] Module loaded');
+    // Expose handleStartTrip for other handlers to use
+    window.handleStartTrip = handleStartTrip;
+    
+    console.log('[TripHero] Module loaded with secured handlers exposed');
 })();

@@ -1,0 +1,88 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test Places Autocomplete Click</title>
+    <link rel="stylesheet" href="/public/places-autocomplete.css">
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 600px;
+            margin: 50px auto;
+            padding: 20px;
+        }
+        .test-container {
+            margin: 20px 0;
+        }
+        .test-input {
+            width: 100%;
+            padding: 12px;
+            border: 1px solid #ccc;
+            border-radius: 8px;
+            font-size: 16px;
+        }
+        .log-output {
+            background: #f5f5f5;
+            padding: 10px;
+            border-radius: 4px;
+            margin: 20px 0;
+            font-family: monospace;
+            max-height: 200px;
+            overflow-y: auto;
+        }
+    </style>
+</head>
+<body>
+    <h1>Places Autocomplete Click Test</h1>
+    
+    <div class="test-container">
+        <label for="test-destination">Destination (test dropdown clicks):</label>
+        <input type="text" id="test-destination" class="test-input" placeholder="Type a location to test...">
+    </div>
+    
+    <div class="log-output" id="log-output">
+        <strong>Click Test Log:</strong><br>
+        Ready to test - type in the input above...<br>
+    </div>
+
+    <script src="/public/places-autocomplete.js"></script>
+    <script>
+        const logOutput = document.getElementById('log-output');
+        
+        function log(message) {
+            const timestamp = new Date().toLocaleTimeString();
+            logOutput.innerHTML += `[${timestamp}] ${message}<br>`;
+            logOutput.scrollTop = logOutput.scrollHeight;
+            console.log(`[Test] ${message}`);
+        }
+        
+        // Initialize autocomplete with test callbacks
+        const testInput = document.getElementById('test-destination');
+        const autocomplete = new PlacesAutocomplete(testInput, {
+            placeholder: 'Type a location to test clicking...',
+            onSelect: (place) => {
+                log(`✅ SUCCESS: Selected "${place.description}"`);
+                log(`   - Place ID: ${place.place_id || 'N/A'}`);
+                log(`   - Type: ${place.type || 'N/A'}`);
+                log(`   - Is Free Text: ${place.isFreeText || false}`);
+            },
+            onClear: () => {
+                log('🗑️ Input cleared');
+            }
+        });
+        
+        // Override console.log to capture PlacesAutocomplete debug logs
+        const originalLog = console.log;
+        console.log = function(...args) {
+            if (args.length > 0 && typeof args[0] === 'string' && args[0].includes('PlacesAutocomplete')) {
+                log(`DEBUG: ${args.join(' ')}`);
+            }
+            originalLog.apply(console, args);
+        };
+        
+        log('🚀 Test page loaded - autocomplete initialized');
+        log('📝 Instructions: Type in the input above, then try clicking on dropdown items');
+    </script>
+</body>
+</html>

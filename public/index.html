@@ -6,10 +6,11 @@
     <title>Pathfind - Plan Group Trips Together</title>
     <script src="error-handler.js"></script>
     <script src="runtime-validators.js"></script>
-    <link rel="stylesheet" href="styles.css?v=3">
+    <link rel="stylesheet" href="styles.css?v=4">
     <link rel="stylesheet" href="interactive-styles.css">
     <link rel="stylesheet" href="flights-empty-state.css">
     <link rel="stylesheet" href="auth-modal.css?v=1">
+    <link rel="stylesheet" href="auth-improved.css?v=1">
     <link rel="stylesheet" href="itinerary-cards.css?v=1">
     <link rel="stylesheet" href="flights.css?v=1">
     <link rel="stylesheet" href="flights-enhanced.css">
@@ -17,6 +18,7 @@
     <link rel="stylesheet" href="trip-modals.css?v=1">
     <link rel="stylesheet" href="places.css?v=1">
     <link rel="stylesheet" href="places-autocomplete.css?v=1">
+    <link rel="stylesheet" href="disable-glass-effects.css">
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
 </head>
 <body>
@@ -285,6 +287,14 @@
                             </svg>
                         </button>
                     </div>
+                    <p class="auth-requirement-note">
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="vertical-align: middle;">
+                            <circle cx="12" cy="12" r="10"></circle>
+                            <line x1="12" y1="16" x2="12" y2="12"></line>
+                            <line x1="12" y1="8" x2="12.01" y2="8"></line>
+                        </svg>
+                        Sign up or log in required to create trips
+                    </p>
                 </div>
                 
                 <!-- Join Trip Option -->
@@ -1315,12 +1325,127 @@
             document.head.appendChild(script);
         }
     </script>
-    <script src="auth.js?v=5"></script>
-    <script src="auth-modal.js?v=1"></script>
+    <!-- Authentication Guard System -->
+    <script type="module" src="auth-guard.js"></script>
+    
+    <!-- Amplify Authentication System -->
+    <script type="module">
+        // Check if user is authenticated on page load
+        import { Amplify } from 'https://cdn.jsdelivr.net/npm/aws-amplify@6.15.5/+esm';
+        
+        async function initAuth() {
+            try {
+                // Load Amplify config
+                const response = await fetch('/amplify_outputs.json');
+                const outputs = await response.json();
+                
+                // Configure Amplify
+                const config = {
+                    Auth: {
+                        Cognito: {
+                            userPoolId: outputs.auth.user_pool_id,
+                            userPoolClientId: outputs.auth.user_pool_client_id,
+                            identityPoolId: outputs.auth.identity_pool_id,
+                            region: outputs.auth.aws_region
+                        }
+                    }
+                };
+                
+                Amplify.configure(config);
+                
+                // Check if user is logged in
+                const { getCurrentUser } = await import('https://cdn.jsdelivr.net/npm/aws-amplify@6.15.5/auth/+esm');
+                const user = await getCurrentUser();
+                
+                // Update UI for authenticated user
+                console.log('User authenticated:', user);
+                document.getElementById('nav-auth').textContent = 'Profile';
+                document.getElementById('nav-trips').classList.remove('hidden');
+                document.getElementById('nav-profile').classList.remove('hidden');
+                document.getElementById('nav-logout').classList.remove('hidden');
+                
+                // Add logout functionality
+                document.getElementById('nav-logout').addEventListener('click', async () => {
+                    try {
+                        const { signOut } = await import('https://cdn.jsdelivr.net/npm/aws-amplify@6.15.5/auth/+esm');
+                        await signOut();
+                        window.location.reload(); // Refresh page to reset UI
+                    } catch (error) {
+                        console.error('Logout error:', error);
+                    }
+                });
+                
+                // Add profile navigation
+                document.getElementById('nav-auth').addEventListener('click', () => {
+                    window.location.href = '/auth-with-db.html';
+                });
+                
+                // Add trips navigation - requires authentication
+                document.getElementById('nav-trips').addEventListener('click', async () => {
+                    if (window.authGuard && !(await window.authGuard.requireAuth('access your trips'))) {
+                        return;
+                    }
+                    // Show trips page (implement later)
+                    console.log('Showing trips page');
+                });
+                
+                // Add profile navigation - requires authentication  
+                document.getElementById('nav-profile').addEventListener('click', async () => {
+                    if (window.authGuard && !(await window.authGuard.requireAuth('access your profile'))) {
+                        return;
+                    }
+                    window.location.href = '/auth-with-db.html';
+                });
+                
+            } catch (error) {
+                // User not authenticated - hide protected features and setup auth
+                console.log('User not authenticated');
+                
+                // Hide all protected navigation items
+                document.getElementById('nav-trips').classList.add('hidden');
+                document.getElementById('nav-profile').classList.add('hidden');
+                document.getElementById('nav-logout').classList.add('hidden');
+                
+                // Setup auth redirect
+                document.getElementById('nav-auth').addEventListener('click', () => {
+                    window.location.href = '/auth-with-db.html';
+                });
+                
+                // Add auth guards to any other buttons that might be clicked
+                setupAuthGuardsForUnauthenticated();
+            }
+        }
+        
+        // Setup auth guards for unauthenticated users
+        function setupAuthGuardsForUnauthenticated() {
+            // Guard any trip-related buttons that might bypass the hero flow
+            const protectedButtons = [
+                'new-trip-btn',
+                'join-trip-btn', 
+                'nav-trips',
+                'nav-profile'
+            ];
+            
+            protectedButtons.forEach(buttonId => {
+                const button = document.getElementById(buttonId);
+                if (button) {
+                    button.addEventListener('click', (e) => {
+                        e.preventDefault();
+                        e.stopPropagation();
+                        window.location.href = '/auth-with-db.html';
+                    });
+                }
+            });
+        }
+        
+        // Initialize when page loads
+        initAuth();
+    </script>
+    <script src="auth-guard.js?v=1"></script>
     <script src="calendar.js?v=5"></script>
     <script src="guest-selector.js?v=1"></script>
     <script src="itinerary-cards.js?v=1"></script>
-    <script src="flights.js?v=1"></script>
+    <script src="flights.js?v=2"></script>
     <script src="flights-page.js?v=1"></script>
     <script src="flights-enhanced.js"></script>
     <script src="stays.js?v=1"></script>
@@ -1328,9 +1453,9 @@
     <script src="places.js?v=1"></script>
     <script src="places-autocomplete.js?v=1"></script>
     <script src="location-inputs.js?v=1"></script>
-    <script src="trip-hero.js?v=1"></script>
-    <script src="search-handler.js?v=1"></script>
-    <script src="app.js?v=5"></script>
+    <script src="trip-hero.js?v=2"></script>
+    <script src="search-handler.js?v=2"></script>
+    <script src="app.js?v=6"></script>
     <script src="stays.js"></script>
     <script src="interactions.js"></script>
     <script src="enhanced-interactions.js"></script>

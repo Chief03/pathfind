@@ -1,0 +1,33 @@
+/* Disable Glass Effects for Better Performance */
+/* This file disables backdrop-filter effects that can cause performance issues */
+
+.glass-effect,
+.backdrop-blur {
+    backdrop-filter: none !important;
+    -webkit-backdrop-filter: none !important;
+}
+
+/* Fallback solid backgrounds for glass effect elements */
+.hero-section::before,
+.nav-container::before,
+.modal-backdrop {
+    backdrop-filter: none;
+    -webkit-backdrop-filter: none;
+}
+
+/* Performance optimizations */
+.card,
+.modal-content,
+.dropdown-menu {
+    will-change: auto;
+    transform: none;
+}
+
+/* Reduce animations for better performance */
+@media (prefers-reduced-motion: reduce) {
+    * {
+        animation-duration: 0.01ms !important;
+        animation-iteration-count: 1 !important;
+        transition-duration: 0.01ms !important;
+    }
+}

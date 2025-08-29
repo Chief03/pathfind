@@ -1,0 +1,9 @@
+{
+  "name": "create-trip",
+  "version": "1.0.0",
+  "type": "module",
+  "dependencies": {
+    "uuid": "^9.0.0",
+    "aws-amplify": "^6.15.5"
+  }
+}

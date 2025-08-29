@@ -376,15 +376,16 @@ const FlightTransformers = {
     }
 };
 
-// Export for use in Node.js and browser
-if (typeof module !== 'undefined' && module.exports) {
-    module.exports = {
-        FlightSchema,
-        FlightValidation,
-        FlightPermissions,
-        FlightTransformers
-    };
-} else if (typeof window !== 'undefined') {
+// Export for ES modules
+export {
+    FlightSchema,
+    FlightValidation,
+    FlightPermissions,
+    FlightTransformers
+};
+
+// Also expose to window for browser usage
+if (typeof window !== 'undefined') {
     window.FlightModel = {
         FlightSchema,
         FlightValidation,

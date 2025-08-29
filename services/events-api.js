@@ -475,4 +475,4 @@ class EventsAPI {
     }
 }
 
-module.exports = EventsAPI;
+export default EventsAPI;

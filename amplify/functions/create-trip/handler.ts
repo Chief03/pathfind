@@ -1,16 +1,17 @@
-import type { Schema } from '../../data/resource';
+// Schema types will be available from the generated client
+type Schema = any;
 import { Amplify } from 'aws-amplify';
 import { generateClient } from 'aws-amplify/data';
-import { env } from '$amplify/env/create-trip';
 import { v4 as uuidv4 } from 'uuid';
+import type { Handler } from 'aws-lambda';
 
 // Configure Amplify
 Amplify.configure(
   {
     API: {
       GraphQL: {
-        endpoint: env.AMPLIFY_DATA_GRAPHQL_ENDPOINT,
-        region: env.AWS_REGION,
+        endpoint: process.env.AMPLIFY_DATA_GRAPHQL_ENDPOINT || '',
+        region: process.env.AWS_REGION || 'us-east-1',
         defaultAuthMode: 'iam',
       },
     },
@@ -20,9 +21,9 @@ Amplify.configure(
       credentialsProvider: {
         getCredentialsAndIdentityId: async () => ({
           credentials: {
-            accessKeyId: env.AWS_ACCESS_KEY_ID,
-            secretAccessKey: env.AWS_SECRET_ACCESS_KEY,
-            sessionToken: env.AWS_SESSION_TOKEN,
+            accessKeyId: process.env.AWS_ACCESS_KEY_ID || '',
+            secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY || '',
+            sessionToken: process.env.AWS_SESSION_TOKEN || '',
           },
         }),
         clearCredentialsAndIdentityId: () => {
@@ -48,7 +49,7 @@ function generateTripCode(): string {
 /**
  * Creates a new trip with validated destinations
  */
-export const handler: Schema["createValidatedTrip"]["functionHandler"] = async (event) => {
+export const handler: Handler = async (event: any) => {
   const { 
     name, 
     departureCity, 
@@ -144,7 +145,7 @@ async function validateLocation(location: string) {
       return { isValid: false };
     }
 
-    const results: any[] = await response.json();
+    const results = await response.json() as any[];
 
     // Filter for actual cities/towns
     const cityResults = results.filter(r => 

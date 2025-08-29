@@ -3,13 +3,13 @@
  * RESTful endpoints for flight CRUD operations
  */
 
-const express = require('express');
+import express from 'express';
 const router = express.Router();
-const { 
+import { 
     FlightValidation, 
     FlightPermissions, 
     FlightTransformers 
-} = require('../models/flight.model');
+} from '../models/flight.model.js';
 
 // In-memory storage (replace with database in production)
 const flightsDB = new Map();
@@ -470,4 +470,4 @@ if (process.env.NODE_ENV !== 'production') {
     seedSampleData();
 }
 
-module.exports = router;
+export default router;

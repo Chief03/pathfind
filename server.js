@@ -1,13 +1,19 @@
-require('dotenv').config();
-const express = require('express');
-const http = require('http');
-const socketIO = require('socket.io');
-const path = require('path');
-const { v4: uuidv4 } = require('uuid');
-const bcrypt = require('bcryptjs');
-const jwt = require('jsonwebtoken');
-const cookieParser = require('cookie-parser');
-const EventsAPI = require('./services/events-api');
+import dotenv from 'dotenv';
+import express from 'express';
+import http from 'http';
+import { Server as SocketIOServer } from 'socket.io';
+import path from 'path';
+import { fileURLToPath } from 'url';
+import { v4 as uuidv4 } from 'uuid';
+import bcrypt from 'bcryptjs';
+import jwt from 'jsonwebtoken';
+import cookieParser from 'cookie-parser';
+import EventsAPI from './services/events-api.js';
+
+dotenv.config();
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 
 // Database setup
 const sequelize = require('./config/database');
@@ -21,7 +27,7 @@ const allowedOrigins = process.env.ALLOWED_ORIGINS
     ? process.env.ALLOWED_ORIGINS.split(',') 
     : ['http://localhost:3000', 'http://localhost:3001'];
 
-const io = socketIO(server, {
+const io = new SocketIOServer(server, {
     cors: {
         origin: allowedOrigins,
         methods: ["GET", "POST"],
@@ -86,9 +92,14 @@ function authenticateToken(req, res, next) {
     });
 }
 
+<<<<<<< Updated upstream
 // Import routes
 const flightRoutes = require('./routes/flights.routes');
 const authRoutes = require('./routes/auth.routes');
+=======
+// Import flight routes
+import flightRoutes from './routes/flights.routes.js';
+>>>>>>> Stashed changes
 
 // Routes
 app.get('/', (req, res) => {

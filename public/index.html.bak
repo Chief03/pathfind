@@ -1,0 +1,1338 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Pathfind - Plan Group Trips Together</title>
+    <script src="error-handler.js"></script>
+    <script src="runtime-validators.js"></script>
+    <link rel="stylesheet" href="styles.css?v=3">
+    <link rel="stylesheet" href="interactive-styles.css">
+    <link rel="stylesheet" href="flights-empty-state.css">
+    <link rel="stylesheet" href="auth-modal.css?v=1">
+    <link rel="stylesheet" href="itinerary-cards.css?v=1">
+    <link rel="stylesheet" href="flights.css?v=1">
+    <link rel="stylesheet" href="flights-enhanced.css">
+    <link rel="stylesheet" href="activities.css?v=1">
+    <link rel="stylesheet" href="trip-modals.css?v=1">
+    <link rel="stylesheet" href="places.css?v=1">
+    <link rel="stylesheet" href="places-autocomplete.css?v=1">
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+</head>
+<body>
+    <!-- Navigation Bar -->
+    <nav class="navbar">
+        <div class="nav-container">
+            <div class="nav-logo">
+                <a href="/" id="logo-link">
+                    <h2>pathfind</h2>
+                </a>
+            </div>
+            <div class="nav-menu">
+                <div class="language-selector">
+                    <button id="globe-btn" class="icon-btn" aria-label="Language">
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <circle cx="12" cy="12" r="10"></circle>
+                            <line x1="2" y1="12" x2="22" y2="12"></line>
+                            <path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"></path>
+                        </svg>
+                    </button>
+                    <div id="language-dropdown" class="language-dropdown hidden">
+                        <div class="language-header">Choose a language</div>
+                        <button class="language-item active" data-lang="en">
+                            <span class="lang-name">English</span>
+                            <span class="lang-region">(United States)</span>
+                        </button>
+                        <button class="language-item" data-lang="es">
+                            <span class="lang-name">Español</span>
+                            <span class="lang-region">(España)</span>
+                        </button>
+                        <button class="language-item" data-lang="fr">
+                            <span class="lang-name">Français</span>
+                            <span class="lang-region">(France)</span>
+                        </button>
+                        <button class="language-item" data-lang="de">
+                            <span class="lang-name">Deutsch</span>
+                            <span class="lang-region">(Deutschland)</span>
+                        </button>
+                        <button class="language-item" data-lang="it">
+                            <span class="lang-name">Italiano</span>
+                            <span class="lang-region">(Italia)</span>
+                        </button>
+                        <button class="language-item" data-lang="pt">
+                            <span class="lang-name">Português</span>
+                            <span class="lang-region">(Brasil)</span>
+                        </button>
+                        <button class="language-item" data-lang="zh">
+                            <span class="lang-name">中文</span>
+                            <span class="lang-region">(简体)</span>
+                        </button>
+                        <button class="language-item" data-lang="ja">
+                            <span class="lang-name">日本語</span>
+                            <span class="lang-region">(日本)</span>
+                        </button>
+                        <button class="language-item" data-lang="ko">
+                            <span class="lang-name">한국어</span>
+                            <span class="lang-region">(대한민국)</span>
+                        </button>
+                        <button class="language-item" data-lang="ar">
+                            <span class="lang-name">العربية</span>
+                            <span class="lang-region">(السعودية)</span>
+                        </button>
+                    </div>
+                </div>
+                <button id="menu-btn" class="icon-btn" aria-label="Menu">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <line x1="3" y1="6" x2="21" y2="6"></line>
+                        <line x1="3" y1="12" x2="21" y2="12"></line>
+                        <line x1="3" y1="18" x2="21" y2="18"></line>
+                    </svg>
+                </button>
+                <div id="nav-dropdown" class="nav-dropdown hidden">
+                    <button id="nav-auth" class="dropdown-item">Log in / Sign up</button>
+                    <div class="dropdown-divider"></div>
+                    <button id="nav-trips" class="dropdown-item hidden">My Trips</button>
+                    <button id="nav-profile" class="dropdown-item hidden">Profile</button>
+                    <button id="nav-logout" class="dropdown-item hidden">Log out</button>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <div class="main-container">
+        <!-- Landing Page -->
+        <div id="landing-page" class="page active">
+            <div class="hero-section">
+                <h1>Plan Your Perfect Group Trip</h1>
+                <p>Coordinate with friends, find places to stay, and create memories together</p>
+                
+                <div class="search-hero">
+                    <!-- Trip Name Input -->
+                    <div class="trip-name-section">
+                        <label for="hero-trip-name">Give your trip a name</label>
+                        <input type="text" id="hero-trip-name" placeholder="e.g., Summer Europe Adventure, Girls Weekend NYC" class="trip-name-input">
+                    </div>
+                    
+                    <!-- Custom Trip Code Input -->
+                    <div class="trip-code-section">
+                        <label for="hero-trip-code">Choose a trip code (optional)</label>
+                        <input type="text" id="hero-trip-code" placeholder="e.g., COLORADO2025, GIRLSTRIP" class="trip-code-input uppercase-input" maxlength="12">
+                        <small class="trip-code-hint">Leave blank to auto-generate. 6-12 characters, letters and numbers only.</small>
+                    </div>
+                    
+                    <div class="search-bar">
+                        <div class="search-field destination-field">
+                            <label>Destination</label>
+                            <input type="text" id="hero-destination" placeholder="Search destinations" autocomplete="off">
+                            <!-- PlacesAutocomplete will create its own dropdown -->
+                        </div>
+                        <div class="search-divider"></div>
+                        <div class="search-field dates-field">
+                            <label>Dates</label>
+                            <input type="text" id="hero-dates" placeholder="Add dates" readonly>
+                            <div id="calendar-dropdown" class="calendar-dropdown hidden">
+                                <div class="calendar-header">
+                                    <span>Select your travel dates</span>
+                                    <button type="button" class="close-calendar">✕</button>
+                                </div>
+                                <div class="date-selection-display">
+                                    <div class="date-display-item">
+                                        <label>Depart</label>
+                                        <div id="depart-date-display" class="date-value">Select date</div>
+                                    </div>
+                                    <div class="date-display-item">
+                                        <label>Return</label>
+                                        <div id="return-date-display" class="date-value">Select date</div>
+                                    </div>
+                                </div>
+                                <div class="calendar-months">
+                                    <div class="month-navigation">
+                                        <button type="button" id="prev-month" class="month-nav-btn">‹</button>
+                                        <div class="month-display">
+                                            <span id="current-month"></span>
+                                        </div>
+                                        <button type="button" id="next-month" class="month-nav-btn">›</button>
+                                    </div>
+                                    <div class="calendars-container">
+                                        <div class="calendar-month" id="calendar-month-1">
+                                            <div class="month-title" id="month-title-1"></div>
+                                            <div class="weekdays">
+                                                <div>Sun</div>
+                                                <div>Mon</div>
+                                                <div>Tue</div>
+                                                <div>Wed</div>
+                                                <div>Thu</div>
+                                                <div>Fri</div>
+                                                <div>Sat</div>
+                                            </div>
+                                            <div class="days-grid" id="days-grid-1"></div>
+                                        </div>
+                                        <div class="calendar-month" id="calendar-month-2">
+                                            <div class="month-title" id="month-title-2"></div>
+                                            <div class="weekdays">
+                                                <div>Sun</div>
+                                                <div>Mon</div>
+                                                <div>Tue</div>
+                                                <div>Wed</div>
+                                                <div>Thu</div>
+                                                <div>Fri</div>
+                                                <div>Sat</div>
+                                            </div>
+                                            <div class="days-grid" id="days-grid-2"></div>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="calendar-footer">
+                                    <button type="button" class="clear-dates-btn">Clear dates</button>
+                                    <button type="button" class="done-btn">Done</button>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="search-divider"></div>
+                        <div class="search-field who-field">
+                            <label>Who</label>
+                            <input type="text" id="hero-who" placeholder="Add guests" readonly aria-label="Guest selector" aria-expanded="false" aria-controls="who-dropdown">
+                            <div id="who-dropdown" class="who-dropdown hidden" role="dialog" aria-label="Select number of guests">
+                                <div class="who-header">
+                                    <span>Who's traveling?</span>
+                                    <button type="button" class="close-who" aria-label="Close guest selector">✕</button>
+                                </div>
+                                <div class="guest-selector">
+                                    <div class="guest-type">
+                                        <div class="guest-info">
+                                            <span class="guest-label">Adults</span>
+                                            <span class="guest-sublabel">Age 13+</span>
+                                        </div>
+                                        <div class="guest-controls">
+                                            <button type="button" class="guest-btn minus" id="adults-minus" 
+                                                aria-label="Decrease adults" tabindex="0">
+                                                <span aria-hidden="true">−</span>
+                                            </button>
+                                            <span class="guest-count" id="adults-count" role="status" aria-live="polite" aria-label="2 adults">2</span>
+                                            <button type="button" class="guest-btn plus" id="adults-plus" 
+                                                aria-label="Increase adults" tabindex="0">
+                                                <span aria-hidden="true">+</span>
+                                            </button>
+                                        </div>
+                                    </div>
+                                    <div class="guest-type">
+                                        <div class="guest-info">
+                                            <span class="guest-label">Children</span>
+                                            <span class="guest-sublabel">Ages 2-12</span>
+                                        </div>
+                                        <div class="guest-controls">
+                                            <button type="button" class="guest-btn minus" id="children-minus" 
+                                                aria-label="Decrease children" tabindex="0">
+                                                <span aria-hidden="true">−</span>
+                                            </button>
+                                            <span class="guest-count" id="children-count" role="status" aria-live="polite" aria-label="0 children">0</span>
+                                            <button type="button" class="guest-btn plus" id="children-plus" 
+                                                aria-label="Increase children" tabindex="0">
+                                                <span aria-hidden="true">+</span>
+                                            </button>
+                                        </div>
+                                    </div>
+                                    <div class="guest-type">
+                                        <div class="guest-info">
+                                            <span class="guest-label">Infants</span>
+                                            <span class="guest-sublabel">Under 2</span>
+                                        </div>
+                                        <div class="guest-controls">
+                                            <button type="button" class="guest-btn minus" id="infants-minus" 
+                                                aria-label="Decrease infants" tabindex="0">
+                                                <span aria-hidden="true">−</span>
+                                            </button>
+                                            <span class="guest-count" id="infants-count" role="status" aria-live="polite" aria-label="0 infants">0</span>
+                                            <button type="button" class="guest-btn plus" id="infants-plus" 
+                                                aria-label="Increase infants" tabindex="0">
+                                                <span aria-hidden="true">+</span>
+                                            </button>
+                                        </div>
+                                    </div>
+                                    <div class="guest-type">
+                                        <div class="guest-info">
+                                            <span class="guest-label">Pets</span>
+                                            <span class="guest-sublabel">Service animals welcome</span>
+                                        </div>
+                                        <div class="guest-controls">
+                                            <button type="button" class="guest-btn minus" id="pets-minus" 
+                                                aria-label="Decrease pets" tabindex="0">
+                                                <span aria-hidden="true">−</span>
+                                            </button>
+                                            <span class="guest-count" id="pets-count" role="status" aria-live="polite" aria-label="0 pets">0</span>
+                                            <button type="button" class="guest-btn plus" id="pets-plus" 
+                                                aria-label="Increase pets" tabindex="0">
+                                                <span aria-hidden="true">+</span>
+                                            </button>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="guest-footer">
+                                    <div class="guest-summary" role="status" aria-live="polite">
+                                        <span id="total-guests-summary">2 guests total</span>
+                                        <span id="max-guests-warning" class="warning-text hidden">Maximum 16 guests allowed</span>
+                                    </div>
+                                    <div class="guest-actions">
+                                        <button type="button" class="clear-guests-btn" id="clear-guests">Clear all</button>
+                                        <button type="button" class="apply-guests-btn" id="apply-guests">Apply</button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <button id="hero-search" class="search-btn" aria-label="Start a trip">
+                            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" width="16" height="16">
+                                <path d="M10 2a8 8 0 105.293 14.293l5.707 5.707 1.414-1.414-5.707-5.707A8 8 0 0010 2zm0 2a6 6 0 110 12 6 6 0 010-12z"/>
+                            </svg>
+                        </button>
+                    </div>
+                </div>
+                
+                <!-- Join Trip Option -->
+                <div class="join-trip-option">
+                    <p class="join-trip-text">Have a trip code? 
+                        <button id="join-trip-link" class="join-trip-link">Join a trip</button>
+                    </p>
+                </div>
+            </div>
+
+            <div class="features-section">
+                <h2>How Pathfind Works</h2>
+                <div class="features-grid">
+                    <div class="feature-card">
+                        <div class="feature-icon">📍</div>
+                        <h3>Choose Destination</h3>
+                        <p>Select your departure and arrival cities</p>
+                    </div>
+                    <div class="feature-card">
+                        <div class="feature-icon">👥</div>
+                        <h3>Invite Friends</h3>
+                        <p>Share trip code with your group</p>
+                    </div>
+                    <div class="feature-card">
+                        <div class="feature-icon">📅</div>
+                        <h3>Plan Together</h3>
+                        <p>Collaborate on itinerary in real-time</p>
+                    </div>
+                    <div class="feature-card">
+                        <div class="feature-icon">✈️</div>
+                        <h3>Book & Go</h3>
+                        <p>Get flight suggestions and travel info</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Trip Created Success Modal -->
+        <div id="trip-created-modal" class="trip-modal hidden">
+            <div class="trip-modal-backdrop"></div>
+            <div class="trip-modal-content">
+                <div class="trip-modal-header">
+                    <h3>Trip Created Successfully!</h3>
+                    <button class="trip-modal-close" aria-label="Close">×</button>
+                </div>
+                <div class="trip-modal-body">
+                    <div class="trip-success-info">
+                        <div class="trip-icon">🎉</div>
+                        <p>Your trip has been created. Share this code with friends so they can join:</p>
+                        <div class="trip-code-display">
+                            <span id="created-trip-code" class="trip-code">LOADING...</span>
+                            <button id="copy-trip-code" class="copy-code-btn">
+                                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect>
+                                    <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>
+                                </svg>
+                                Copy Code
+                            </button>
+                        </div>
+                        <button id="go-to-trip" class="primary-trip-btn">Go to Trip</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Join Trip Modal -->
+        <div id="join-trip-modal" class="trip-modal hidden">
+            <div class="trip-modal-backdrop"></div>
+            <div class="trip-modal-content">
+                <div class="trip-modal-header">
+                    <h3>Join a Trip</h3>
+                    <button class="trip-modal-close" aria-label="Close">×</button>
+                </div>
+                <div class="trip-modal-body">
+                    <form id="join-trip-form">
+                        <div class="form-group">
+                            <label for="trip-code-input">Enter Trip Code</label>
+                            <input 
+                                type="text" 
+                                id="trip-code-input" 
+                                placeholder="e.g. ABC123XYZ" 
+                                maxlength="12"
+                                autocomplete="off"
+                                class="trip-code-input"
+                            >
+                            <div id="trip-code-error" class="error-message hidden"></div>
+                            <div id="trip-code-success" class="success-message hidden"></div>
+                        </div>
+                        <div class="form-actions">
+                            <button type="button" class="secondary-trip-btn" id="cancel-join-trip">Cancel</button>
+                            <button type="submit" class="primary-trip-btn" id="submit-join-trip">
+                                <span class="btn-text">Join Trip</span>
+                                <span class="btn-loading hidden">Joining...</span>
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+
+        <!-- Login Modal -->
+        <div id="login-modal" class="auth-modal hidden">
+            <div class="auth-backdrop"></div>
+            <div class="auth-card">
+                <button class="auth-close" aria-label="Close">
+                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <line x1="18" y1="6" x2="6" y2="18"></line>
+                        <line x1="6" y1="6" x2="18" y2="18"></line>
+                    </svg>
+                </button>
+                
+                <div class="auth-header">
+                    <h2>Log in or sign up</h2>
+                </div>
+                
+                <div class="auth-content">
+                    <h3>Welcome to Pathfind</h3>
+                    
+                    <form id="auth-form" class="auth-form">
+                        <div class="auth-input-group">
+                            <div class="country-selector">
+                                <select id="country-code" class="country-select">
+                                    <option value="+1">🇺🇸 +1</option>
+                                    <option value="+44">🇬🇧 +44</option>
+                                    <option value="+33">🇫🇷 +33</option>
+                                    <option value="+49">🇩🇪 +49</option>
+                                    <option value="+81">🇯🇵 +81</option>
+                                    <option value="+86">🇨🇳 +86</option>
+                                    <option value="+91">🇮🇳 +91</option>
+                                </select>
+                            </div>
+                            <input type="tel" id="auth-phone" placeholder="Phone number" class="auth-input">
+                        </div>
+                        
+                        <div class="auth-or">
+                            <span>or</span>
+                        </div>
+                        
+                        <input type="email" id="auth-email" placeholder="Email address" class="auth-input">
+                        
+                        <button type="submit" class="auth-continue-btn">Continue</button>
+                    </form>
+                    
+                    <div class="auth-divider">
+                        <span>or</span>
+                    </div>
+                    
+                    <div class="social-logins">
+                        <button class="social-btn google-btn">
+                            <svg width="20" height="20" viewBox="0 0 24 24">
+                                <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/>
+                                <path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/>
+                                <path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"/>
+                                <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"/>
+                            </svg>
+                            <span>Continue with Google</span>
+                        </button>
+                        
+                        <button class="social-btn facebook-btn">
+                            <svg width="20" height="20" viewBox="0 0 24 24" fill="#1877F2">
+                                <path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z"/>
+                            </svg>
+                            <span>Continue with Facebook</span>
+                        </button>
+                        
+                        <button class="social-btn apple-btn">
+                            <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
+                                <path d="M17.05 20.28c-.98.95-2.05.88-3.08.4-1.09-.5-2.09-.48-3.24 0-1.44.62-2.2.44-3.06-.4C2.79 15.25 3.51 7.59 9.05 7.31c1.35.07 2.29.74 3.08.8 1.18-.24 2.31-.93 3.57-.84 1.51.12 2.65.72 3.4 1.8-3.12 1.87-2.38 5.98.48 7.13-.57 1.5-1.31 2.99-2.54 4.09l.01-.01zM12.03 7.25c-.15-2.23 1.66-4.07 3.74-4.25.29 2.58-2.34 4.5-3.74 4.25z"/>
+                            </svg>
+                            <span>Continue with Apple</span>
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Trip Creation Page -->
+        <div id="create-trip-page" class="page hidden">
+            <div class="create-trip-container">
+                <h2>Create Your Trip</h2>
+                <form id="create-trip-form">
+                    <div class="trip-form-section">
+                        <h3>Trip Details</h3>
+                        <div class="form-group">
+                            <label>Trip Name</label>
+                            <input type="text" id="trip-name" placeholder="e.g., Summer Europe Adventure" required>
+                        </div>
+                        
+                        <div class="location-section">
+                            <div class="form-group">
+                                <label>Departure City</label>
+                                <input type="text" id="departure-city" placeholder="e.g., New York, NY" required>
+                                <div id="departure-suggestions" class="location-suggestions hidden"></div>
+                            </div>
+                            
+                            <div class="form-group">
+                                <label>Destination City</label>
+                                <input type="text" id="destination-city" placeholder="e.g., Paris, France" required>
+                                <div id="destination-suggestions" class="location-suggestions hidden"></div>
+                            </div>
+                        </div>
+
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label>Departure Date</label>
+                                <input type="date" id="trip-start" required>
+                            </div>
+                            <div class="form-group">
+                                <label>Return Date</label>
+                                <input type="date" id="trip-end" required>
+                            </div>
+                        </div>
+
+                        <div class="form-group">
+                            <label>Estimated Group Size</label>
+                            <input type="number" id="group-size" min="1" value="2" required>
+                        </div>
+
+                        <div class="form-group">
+                            <label>Trip Description (Optional)</label>
+                            <textarea id="trip-description" rows="3" placeholder="What's the purpose of this trip?"></textarea>
+                        </div>
+                    </div>
+
+                    <button type="submit" class="create-trip-btn">Create Trip & Get Started</button>
+                </form>
+            </div>
+        </div>
+
+        <!-- Trip Dashboard -->
+        <div id="trip-dashboard" class="page hidden">
+            <!-- Dashboard header removed for cleaner interface -->
+
+            <div class="dashboard-tabs">
+                <button class="tab active" data-tab="overview">Overview</button>
+                <button class="tab" data-tab="flights">Flight Info</button>
+                <button class="tab" data-tab="stay">Stay</button>
+                <button class="tab" data-tab="itinerary">Itinerary</button>
+                <button class="tab" data-tab="places">Places to Explore</button>
+                <button class="tab" data-tab="budget">Budget</button>
+            </div>
+
+            <div class="dashboard-content">
+                <!-- Overview Tab -->
+                <div id="overview-tab" class="tab-content active">
+                    <!-- Hero Banner -->
+                    <div class="overview-hero">
+                        <div class="hero-background"></div>
+                        <div class="hero-content">
+                            <h1 class="trip-destination">🌟 <span id="overview-destination">Your Amazing Trip</span></h1>
+                            <p class="trip-dates-display">📅 <span id="overview-dates">Select your dates</span></p>
+                        </div>
+                    </div>
+
+                    <!-- Quick Stats -->
+                    <div class="overview-stats">
+                        <div class="stat-card clickable" id="edit-dates-card" onclick="openDateEditor()">
+                            <div class="stat-icon">⏱️</div>
+                            <div class="stat-info">
+                                <div class="stat-value" id="trip-duration">0 days</div>
+                                <div class="stat-label">Duration</div>
+                            </div>
+                            <div class="edit-hint">Click to edit</div>
+                        </div>
+                        <div class="stat-card clickable" id="edit-travelers-card" onclick="openTravelersEditor()">
+                            <div class="stat-icon">👥</div>
+                            <div class="stat-info">
+                                <div class="stat-value" id="traveler-count">0</div>
+                                <div class="stat-label">Travelers</div>
+                            </div>
+                            <div class="edit-hint">Click to edit</div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="stat-icon">✈️</div>
+                            <div class="stat-info">
+                                <div class="stat-value" id="flight-count">0</div>
+                                <div class="stat-label">Flights</div>
+                            </div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="stat-icon">📍</div>
+                            <div class="stat-info">
+                                <div class="stat-value" id="activity-count">0</div>
+                                <div class="stat-label">Activities</div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Main Content Grid -->
+                    <div class="overview-main-grid">
+                        <!-- Trip Progress -->
+                        <div class="overview-card progress-card">
+                            <div class="card-header">
+                                <h3>🎯 Trip Planning Progress</h3>
+                                <span class="progress-percentage">0%</span>
+                            </div>
+                            <div class="progress-bar-container">
+                                <div class="progress-bar" data-width="0"></div>
+                            </div>
+                            <div class="progress-checklist">
+                                <div class="checklist-item clickable" data-complete="false" data-task="destination">
+                                    <input type="checkbox" class="progress-checkbox" id="check-destination" data-task="destination">
+                                    <label for="check-destination">Destination selected</label>
+                                </div>
+                                <div class="checklist-item clickable" data-complete="false" data-task="dates">
+                                    <input type="checkbox" class="progress-checkbox" id="check-dates" data-task="dates">
+                                    <label for="check-dates">Dates confirmed</label>
+                                </div>
+                                <div class="checklist-item clickable" data-complete="false" data-task="travelers">
+                                    <input type="checkbox" class="progress-checkbox" id="check-travelers" data-task="travelers">
+                                    <label for="check-travelers">Travelers added</label>
+                                </div>
+                                <div class="checklist-item clickable" data-complete="false" data-task="flights">
+                                    <input type="checkbox" class="progress-checkbox" id="check-flights" data-task="flights">
+                                    <label for="check-flights">Flights booked</label>
+                                </div>
+                                <div class="checklist-item clickable" data-complete="false" data-task="activities">
+                                    <input type="checkbox" class="progress-checkbox" id="check-activities" data-task="activities">
+                                    <label for="check-activities">Activities planned</label>
+                                </div>
+                                <div class="checklist-item clickable" data-complete="false" data-task="accommodation">
+                                    <input type="checkbox" class="progress-checkbox" id="check-accommodation" data-task="accommodation">
+                                    <label for="check-accommodation">Accommodation booked</label>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Participants -->
+                        <div class="overview-card participants-card">
+                            <div class="card-header">
+                                <h3>👥 Trip Participants</h3>
+                                <button type="button" class="invite-btn" onclick="openInviteModal()">
+                                    <span>+</span>
+                                    <span>Invite</span>
+                                </button>
+                            </div>
+                            <div id="participants-list" class="participants-grid">
+                                <!-- Current participants -->
+                                <div class="participant-item">
+                                    <div class="participant-avatar">YO</div>
+                                    <div class="participant-info">
+                                        <div class="participant-name">You</div>
+                                        <div class="participant-role">Organizer</div>
+                                    </div>
+                                </div>
+                                <!-- Add participant placeholder -->
+                                <div class="add-participant-placeholder" onclick="openInviteModal()">
+                                    <div class="add-participant-icon">+</div>
+                                    <div class="add-participant-text">
+                                        <div>Add</div>
+                                        <div>Friend</div>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <!-- Enhanced Invite Section -->
+                            <div class="invite-section">
+                                <div class="invite-methods">
+                                    <h4>Invite Friends to Join</h4>
+                                    <div class="invite-options">
+                                        <button type="button" class="invite-option-btn" onclick="shareViaLink()">
+                                            <span class="option-icon">🔗</span>
+                                            <span>Share Link</span>
+                                        </button>
+                                        <button type="button" class="invite-option-btn" onclick="shareViaEmail()">
+                                            <span class="option-icon">📧</span>
+                                            <span>Email Invite</span>
+                                        </button>
+                                        <button type="button" class="invite-option-btn" onclick="shareViaSMS()">
+                                            <span class="option-icon">💬</span>
+                                            <span>Text Message</span>
+                                        </button>
+                                    </div>
+                                </div>
+                                
+                                <div class="share-code-section">
+                                    <p class="share-label">Quick Share Code:</p>
+                                    <div class="code-display">
+                                        <span id="trip-code-overview">MADEOUT</span>
+                                        <button type="button" class="copy-code-btn" onclick="copyTripCode()">📋</button>
+                                    </div>
+                                    <p class="share-hint">Friends can join using this code at pathfind.com/join</p>
+                                </div>
+                                
+                                <div class="pending-invites">
+                                    <h4>Pending Invitations</h4>
+                                    <div id="pending-invites-list" class="pending-list">
+                                        <p class="no-pending">No pending invitations</p>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Recent Activity -->
+                        <div class="overview-card activity-card">
+                            <div class="card-header">
+                                <h3>📝 Recent Activity</h3>
+                                <span class="view-all-link">View all →</span>
+                            </div>
+                            <div class="activity-feed">
+                                <div class="activity-item">
+                                    <div class="activity-icon">🎉</div>
+                                    <div class="activity-details">
+                                        <p class="activity-text">Trip created</p>
+                                        <span class="activity-time">Just now</span>
+                                    </div>
+                                </div>
+                                <!-- More activities will be added here -->
+                            </div>
+                        </div>
+
+                        <!-- Quick Actions -->
+                        <div class="overview-card actions-card">
+                            <h3>⚡ Quick Actions</h3>
+                            <div class="quick-actions-grid">
+                                <button type="button" class="quick-action-btn" onclick="switchTab('flights')">
+                                    <span class="action-icon">✈️</span>
+                                    <span>Add Flight</span>
+                                </button>
+                                <button type="button" class="quick-action-btn" onclick="switchTab('stay')">
+                                    <span class="action-icon">🏨</span>
+                                    <span>Book Stay</span>
+                                </button>
+                                <button type="button" class="quick-action-btn" onclick="switchTab('itinerary')">
+                                    <span class="action-icon">📅</span>
+                                    <span>Plan Day</span>
+                                </button>
+                                <button type="button" class="quick-action-btn" onclick="switchTab('places')">
+                                    <span class="action-icon">🗺️</span>
+                                    <span>Explore</span>
+                                </button>
+                                <button type="button" class="quick-action-btn" onclick="switchTab('budget')">
+                                    <span class="action-icon">💰</span>
+                                    <span>Set Budget</span>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Map Section -->
+                    <div class="overview-map-section">
+                        <div class="overview-card full-width-card">
+                            <div class="card-header">
+                                <h3>🗺️ Trip Map</h3>
+                                <button class="expand-map-btn">⛶ Expand</button>
+                            </div>
+                            <div id="overview-map" class="overview-map"></div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Flight Info Tab -->
+                <div id="flights-tab" class="tab-content hidden">
+                    <div class="flights-container">
+                        <!-- Empty State -->
+                        <div id="flights-empty-state" class="empty-state flights-empty-animated">
+                            <div class="airplane-animation">
+                                <div class="airplane">✈️</div>
+                                <div class="flight-path">
+                                    <span class="dot"></span>
+                                    <span class="dot"></span>
+                                    <span class="dot"></span>
+                                    <span class="dot"></span>
+                                    <span class="dot"></span>
+                                </div>
+                            </div>
+                            <h3 class="empty-state-title animated-text">
+                                <span class="gradient-text">The skies are waiting!</span> 
+                                <span class="wave">👋</span>
+                            </h3>
+                            <p class="empty-state-subtitle">No one's shared their flight details yet. Be the first to help coordinate airport pickups and arrival times!</p>
+                            <div class="fun-facts">
+                                <div class="fact-bubble">
+                                    <span class="fact-icon">💡</span>
+                                    <span class="fact-text">Pro tip: Share your flight info early so friends can plan airport surprises!</span>
+                                </div>
+                            </div>
+                            
+                            <!-- Quick Add Options -->
+                            <div class="quick-add-section">
+                                <p class="quick-add-title">Quick Start:</p>
+                                <div class="quick-add-buttons">
+                                    <button type="button" onclick="quickAddFlight('me')" class="quick-add-btn">
+                                        <span>🙋</span> Add My Flight
+                                    </button>
+                                    <button type="button" onclick="quickAddFlight('friend')" class="quick-add-btn">
+                                        <span>👥</span> Add Friend's Flight
+                                    </button>
+                                    <button type="button" onclick="addSampleFlights()" class="quick-add-btn">
+                                        <span>✨</span> Try Sample Flights
+                                    </button>
+                                </div>
+                            </div>
+                            <button type="button" id="add-flight-empty-btn" class="empty-state-btn pulse-btn">
+                                <span class="btn-icon">🎫</span>
+                                <span>Add Your Flight Details</span>
+                            </button>
+                            <div class="empty-state-info">
+                                <p class="flight-pro-tip">
+                                    <strong>Pro tip:</strong> Add everyone's flight info to easily see who arrives when and coordinate transportation together.
+                                </p>
+                            </div>
+                        </div>
+                        
+                        <!-- Flight List (hidden by default) -->
+                        <div id="flights-list" class="flights-list hidden">
+                            <div class="flights-header">
+                                <h3>Flight Information</h3>
+                                <button type="button" id="add-flight-btn" class="add-flight-btn">
+                                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                        <line x1="12" y1="5" x2="12" y2="19"></line>
+                                        <line x1="5" y1="12" x2="19" y2="12"></line>
+                                    </svg>
+                                    Add Flight
+                                </button>
+                            </div>
+                            <div id="flights-content" class="flights-content">
+                                <!-- Flight items will be added here -->
+                            </div>
+                        </div>
+                        
+                        <!-- Flight Form Modal -->
+                        <div id="flight-modal" class="flight-modal hidden">
+                            <div class="flight-modal-content">
+                                <div class="flight-modal-header">
+                                    <h3 id="flight-modal-title">Add Flight</h3>
+                                    <button type="button" class="flight-modal-close">&times;</button>
+                                </div>
+                                <form id="flight-form">
+                                    <div class="form-group">
+                                        <label for="traveler-name">Who's Flying? *</label>
+                                        <div class="traveler-selector">
+                                            <button type="button" class="traveler-option active" data-traveler="me">
+                                                <span class="option-icon">🙋</span>
+                                                <span>Me</span>
+                                            </button>
+                                            <button type="button" class="traveler-option" data-traveler="friend">
+                                                <span class="option-icon">👥</span>
+                                                <span>Friend</span>
+                                            </button>
+                                        </div>
+                                        <input type="text" id="traveler-name" class="hidden-initially" placeholder="Enter friend's name" required>
+                                    </div>
+                                    <div class="form-row">
+                                        <div class="form-group">
+                                            <label for="airline">Airline *</label>
+                                            <input type="text" id="airline" list="airline-list" placeholder="e.g., United Airlines" required>
+                                            <datalist id="airline-list">
+                                                <option value="American Airlines">
+                                                <option value="Delta Airlines">
+                                                <option value="United Airlines">
+                                                <option value="Southwest Airlines">
+                                                <option value="JetBlue">
+                                                <option value="Alaska Airlines">
+                                                <option value="Spirit Airlines">
+                                                <option value="Frontier Airlines">
+                                            </datalist>
+                                        </div>
+                                        <div class="form-group">
+                                            <label for="flight-number">Flight Number *</label>
+                                            <input type="text" id="flight-number" placeholder="e.g., UA123" required>
+                                        </div>
+                                    </div>
+                                    <div class="form-row">
+                                        <div class="form-group">
+                                            <label for="departure-airport">Departure Airport *</label>
+                                            <input type="text" id="departure-airport" placeholder="e.g., JFK" maxlength="4" required>
+                                        </div>
+                                        <div class="form-group">
+                                            <label for="arrival-airport">Arrival Airport *</label>
+                                            <input type="text" id="arrival-airport" placeholder="e.g., CDG" maxlength="4" required>
+                                        </div>
+                                    </div>
+                                    <div class="form-group">
+                                        <label for="arrival-datetime">Arrival Date & Time *</label>
+                                        <input type="datetime-local" id="arrival-datetime" required>
+                                    </div>
+                                    <div class="form-group">
+                                        <label for="flight-notes">Notes (optional)</label>
+                                        <textarea id="flight-notes" rows="3" placeholder="e.g., Terminal 2, Gate B5"></textarea>
+                                    </div>
+                                    <div class="flight-modal-actions">
+                                        <button type="button" class="btn-cancel">Cancel</button>
+                                        <button type="submit" class="btn-save">Save Flight</button>
+                                    </div>
+                                </form>
+                            </div>
+                        </div>
+                        
+                        <!-- Flight Details Drawer -->
+                        <div id="flight-drawer" class="flight-drawer hidden">
+                            <div class="drawer-header">
+                                <h3>Flight Details</h3>
+                                <button type="button" class="drawer-close">&times;</button>
+                            </div>
+                            <div id="drawer-content" class="drawer-content">
+                                <!-- Flight details will be populated here -->
+                            </div>
+                            <div class="drawer-actions">
+                                <button type="button" id="edit-flight-btn" class="edit-btn">Edit</button>
+                                <button type="button" id="delete-flight-btn" class="delete-btn">Delete</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Stay Tab for Accommodation -->
+                <div id="stay-tab" class="tab-content hidden">
+                    <div class="stay-container">
+                        <!-- Empty State -->
+                        <div id="stay-empty-state" class="empty-state stay-empty-animated">
+                            <div class="hotel-animation">
+                                <div class="building">🏨</div>
+                                <div class="stars">
+                                    <span class="star">⭐</span>
+                                    <span class="star">⭐</span>
+                                    <span class="star">⭐</span>
+                                    <span class="star">⭐</span>
+                                    <span class="star">⭐</span>
+                                </div>
+                            </div>
+                            <h3 class="empty-state-title">
+                                <span class="gradient-text">No place like... nowhere yet!</span> 
+                                <span class="bounce-emoji">🏠</span>
+                            </h3>
+                            <p class="empty-state-subtitle">Nobody's booked a place to crash yet. Add your accommodation details so the squad knows where to find you!</p>
+                            <div class="accommodation-options">
+                                <span class="option-badge">🏨 Hotels</span>
+                                <span class="option-badge">🏠 Airbnb</span>
+                                <span class="option-badge">🏕️ Camping</span>
+                                <span class="option-badge">🏡 Hostels</span>
+                            </div>
+                            <button id="add-stay-empty-btn" class="empty-state-btn glow-btn">
+                                <span class="btn-icon">🔑</span>
+                                <span>Add Your Stay</span>
+                            </button>
+                            <div class="fun-tip">
+                                <span>💡</span>
+                                <span>Fun fact: Sharing accommodation details helps friends book nearby!</span>
+                            </div>
+                        </div>
+                        
+                        <!-- Stay List (hidden by default) -->
+                        <div id="stays-list" class="stays-list hidden">
+                            <div class="stays-header">
+                                <h3>Accommodation</h3>
+                                <button id="add-stay-btn" class="add-stay-btn">
+                                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                        <line x1="12" y1="5" x2="12" y2="19"></line>
+                                        <line x1="5" y1="12" x2="19" y2="12"></line>
+                                    </svg>
+                                    Add Stay
+                                </button>
+                            </div>
+                            
+                            <!-- Suggested Accommodations -->
+                            <div id="stay-suggestions" class="stay-suggestions">
+                                <h4 class="suggestions-title">Quick Add Popular Options</h4>
+                                <div id="stay-suggestions-grid" class="stay-suggestions-grid">
+                                    <!-- Suggestions will be populated here -->
+                                </div>
+                            </div>
+                            
+                            <div id="stays-content" class="stays-content">
+                                <!-- Stay items will be added here -->
+                            </div>
+                        </div>
+                        
+                        <!-- Stay Form Modal -->
+                        <div id="stay-modal" class="stay-modal hidden">
+                            <div class="stay-modal-content">
+                                <div class="stay-modal-header">
+                                    <h3 id="stay-modal-title">Add Accommodation</h3>
+                                    <button class="stay-modal-close">&times;</button>
+                                </div>
+                                <form id="stay-form">
+                                    <div class="form-group">
+                                        <label for="accommodation-name">Accommodation Name *</label>
+                                        <input type="text" id="accommodation-name" placeholder="e.g., Hilton Downtown, Cozy Airbnb" required>
+                                    </div>
+                                    <div class="form-group">
+                                        <label for="accommodation-type">Type *</label>
+                                        <select id="accommodation-type" required>
+                                            <option value="">Select type...</option>
+                                            <option value="hotel">Hotel</option>
+                                            <option value="airbnb">Airbnb</option>
+                                            <option value="hostel">Hostel</option>
+                                            <option value="vacation-rental">Vacation Rental</option>
+                                            <option value="friends">Friends/Family</option>
+                                            <option value="other">Other</option>
+                                        </select>
+                                    </div>
+                                    <div class="form-row">
+                                        <div class="form-group">
+                                            <label for="checkin-date">Check-in Date *</label>
+                                            <input type="date" id="checkin-date" required>
+                                        </div>
+                                        <div class="form-group">
+                                            <label for="checkout-date">Check-out Date *</label>
+                                            <input type="date" id="checkout-date" required>
+                                        </div>
+                                    </div>
+                                    <div class="form-group">
+                                        <label for="accommodation-address">Address *</label>
+                                        <input type="text" id="accommodation-address" placeholder="e.g., 123 Main St, New York, NY" required>
+                                    </div>
+                                    <div class="form-row">
+                                        <div class="form-group">
+                                            <label for="accommodation-price">Total Price</label>
+                                            <input type="number" id="accommodation-price" placeholder="e.g., 500" step="0.01">
+                                        </div>
+                                        <div class="form-group">
+                                            <label for="confirmation-number">Confirmation #</label>
+                                            <input type="text" id="confirmation-number" placeholder="e.g., ABC123">
+                                        </div>
+                                    </div>
+                                    <div class="form-group">
+                                        <label for="accommodation-notes">Notes (optional)</label>
+                                        <textarea id="accommodation-notes" rows="3" placeholder="e.g., Late check-in, breakfast included"></textarea>
+                                    </div>
+                                    <div class="stay-modal-actions">
+                                        <button type="button" class="btn-cancel">Cancel</button>
+                                        <button type="submit" class="btn-save">Save Accommodation</button>
+                                    </div>
+                                </form>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Itinerary Tab with Cards -->
+                <div id="itinerary-tab" class="tab-content hidden">
+                    <div class="itinerary-container">
+                        <div class="itinerary-header">
+                            <h3>Trip Itinerary</h3>
+                            <button id="add-card-btn" class="add-card-btn">
+                                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <line x1="12" y1="5" x2="12" y2="19"></line>
+                                    <line x1="5" y1="12" x2="19" y2="12"></line>
+                                </svg>
+                                Add Event
+                            </button>
+                        </div>
+                        
+                        <div id="cards-container" class="cards-container">
+                            <!-- Cards will be added here dynamically -->
+                        </div>
+                        
+                        <!-- Activities Section -->
+                        <div class="activities-section">
+                            <div class="activities-header">
+                                <h4>Things to Do</h4>
+                                <button id="refresh-activities-btn" class="refresh-btn" aria-label="Refresh activities">
+                                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                        <polyline points="23 4 23 10 17 10"></polyline>
+                                        <polyline points="1 20 1 14 7 14"></polyline>
+                                        <path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"></path>
+                                    </svg>
+                                </button>
+                            </div>
+                            
+                            <!-- Empty State -->
+                            <div id="activities-empty-state" class="activities-empty hidden">
+                                <p>Nothing here yet, pull in some ideas for <span id="empty-city-name"></span></p>
+                                <button id="find-activities-btn" class="find-btn">Find activities</button>
+                            </div>
+                            
+                            <!-- Loading State -->
+                            <div id="activities-loading" class="activities-loading hidden">
+                                <div class="skeleton-loader"></div>
+                                <div class="skeleton-loader"></div>
+                                <div class="skeleton-loader"></div>
+                            </div>
+                            
+                            <!-- Activities Grid -->
+                            <div id="activities-container" class="activities-container">
+                                <!-- Activity cards will be added here -->
+                            </div>
+                        </div>
+                        
+                        <!-- Add/Edit Card Modal -->
+                        <div id="card-modal" class="card-modal hidden">
+                            <div class="card-modal-content">
+                                <div class="card-modal-header">
+                                    <h3 id="card-modal-title">Add Event</h3>
+                                    <button class="card-modal-close">&times;</button>
+                                </div>
+                                <form id="card-form">
+                                    <div class="form-group">
+                                        <label for="card-location">Location *</label>
+                                        <input type="text" id="card-location" placeholder="e.g., Eiffel Tower, Paris" required>
+                                    </div>
+                                    <div class="form-row">
+                                        <div class="form-group">
+                                            <label for="card-date">Date *</label>
+                                            <input type="date" id="card-date" required>
+                                        </div>
+                                        <div class="form-group">
+                                            <label for="card-time">Time <span class="label-hint">(auto-generated)</span></label>
+                                            <input type="time" id="card-time" value="09:00">
+                                        </div>
+                                    </div>
+                                    <div class="form-group">
+                                        <label for="card-price">Price (optional)</label>
+                                        <input type="number" id="card-price" placeholder="0.00" step="0.01" min="0">
+                                    </div>
+                                    <div class="form-group">
+                                        <label for="card-description">Description (optional)</label>
+                                        <textarea id="card-description" rows="3" placeholder="Add notes about this event..."></textarea>
+                                    </div>
+                                    <div class="card-modal-actions">
+                                        <button type="button" class="btn-cancel">Cancel</button>
+                                        <button type="submit" class="btn-save">Save Event</button>
+                                    </div>
+                                </form>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div id="places-tab" class="tab-content hidden">
+                    <div class="places-container">
+                        <div class="places-header">
+                            <h3>Explore <span id="places-city-name">the area</span></h3>
+                            <p class="places-subtitle">Discover popular spots and hidden gems</p>
+                        </div>
+                        
+                        <!-- Quick Categories -->
+                        <div class="places-categories">
+                            <button class="category-chip active" data-category="all">
+                                <span class="category-icon">🗺️</span>
+                                <span>All</span>
+                            </button>
+                            <button class="category-chip" data-category="restaurants">
+                                <span class="category-icon">🍽️</span>
+                                <span>Restaurants</span>
+                            </button>
+                            <button class="category-chip" data-category="attractions">
+                                <span class="category-icon">🏛️</span>
+                                <span>Attractions</span>
+                            </button>
+                            <button class="category-chip" data-category="hotels">
+                                <span class="category-icon">🏨</span>
+                                <span>Hotels</span>
+                            </button>
+                            <button class="category-chip" data-category="cafes">
+                                <span class="category-icon">☕</span>
+                                <span>Cafés</span>
+                            </button>
+                            <button class="category-chip" data-category="shopping">
+                                <span class="category-icon">🛍️</span>
+                                <span>Shopping</span>
+                            </button>
+                            <button class="category-chip" data-category="nightlife">
+                                <span class="category-icon">🌃</span>
+                                <span>Nightlife</span>
+                            </button>
+                            <button class="category-chip" data-category="parks">
+                                <span class="category-icon">🌳</span>
+                                <span>Parks</span>
+                            </button>
+                        </div>
+                        
+                        <!-- Search Bar -->
+                        <div class="places-search">
+                            <div class="search-input-wrapper">
+                                <svg class="search-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <circle cx="11" cy="11" r="8"></circle>
+                                    <path d="m21 21-4.35-4.35"></path>
+                                </svg>
+                                <input type="text" id="place-search" placeholder="Search for specific places...">
+                            </div>
+                            <button id="search-places-btn" class="search-btn">Search</button>
+                        </div>
+                        
+                        <!-- Map View Toggle -->
+                        <div class="view-toggle">
+                            <button class="view-btn active" data-view="list">
+                                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <line x1="8" y1="6" x2="21" y2="6"></line>
+                                    <line x1="8" y1="12" x2="21" y2="12"></line>
+                                    <line x1="8" y1="18" x2="21" y2="18"></line>
+                                    <line x1="3" y1="6" x2="3.01" y2="6"></line>
+                                    <line x1="3" y1="12" x2="3.01" y2="12"></line>
+                                    <line x1="3" y1="18" x2="3.01" y2="18"></line>
+                                </svg>
+                                List View
+                            </button>
+                            <button class="view-btn" data-view="map">
+                                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <polygon points="1 6 1 22 8 18 16 22 23 18 23 2 16 6 8 2 1 6"></polygon>
+                                    <line x1="8" y1="2" x2="8" y2="18"></line>
+                                    <line x1="16" y1="6" x2="16" y2="22"></line>
+                                </svg>
+                                Map View
+                            </button>
+                        </div>
+                        
+                        <!-- Results Area -->
+                        <div id="places-results" class="places-results">
+                            <!-- Map Container (hidden by default) -->
+                            <div id="places-map" class="places-map hidden"></div>
+                            
+                            <!-- List Container -->
+                            <div id="places-list" class="places-list">
+                                <!-- Places will be loaded here -->
+                                <div class="places-loading">
+                                    <div class="spinner"></div>
+                                    <p>Loading places to explore...</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div id="budget-tab" class="tab-content hidden">
+                    <div class="budget-container">
+                        <div class="budget-summary">
+                            <h3>Total Estimated Budget</h3>
+                            <div class="total-amount">$<span id="total-budget">0</span></div>
+                            <div class="per-person">$<span id="budget-per-person">0</span> per person</div>
+                        </div>
+                        <div class="budget-breakdown">
+                            <div class="budget-category">
+                                <span>Flights</span>
+                                <input type="number" class="budget-input" data-category="flights" placeholder="0">
+                            </div>
+                            <div class="budget-category">
+                                <span>Accommodation</span>
+                                <input type="number" class="budget-input" data-category="accommodation" placeholder="0">
+                            </div>
+                            <div class="budget-category">
+                                <span>Food & Dining</span>
+                                <input type="number" class="budget-input" data-category="food" placeholder="0">
+                            </div>
+                            <div class="budget-category">
+                                <span>Activities</span>
+                                <input type="number" class="budget-input" data-category="activities" placeholder="0">
+                            </div>
+                            <div class="budget-category">
+                                <span>Transportation</span>
+                                <input type="number" class="budget-input" data-category="transport" placeholder="0">
+                            </div>
+                            <div class="budget-category">
+                                <span>Other</span>
+                                <input type="number" class="budget-input" data-category="other" placeholder="0">
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+        </div>
+
+        <!-- My Trips Page -->
+        <div id="my-trips-page" class="page hidden">
+            <div class="trips-container">
+                <h2>My Trips</h2>
+                <div class="trips-actions">
+                    <button id="new-trip-btn" class="primary-btn">Create New Trip</button>
+                    <button id="join-trip-btn" class="secondary-btn">Join Trip</button>
+                </div>
+                <div id="trips-grid" class="trips-grid"></div>
+            </div>
+        </div>
+
+        <!-- Profile Page -->
+        <div id="profile-page" class="page hidden">
+            <div class="profile-container">
+                <h2>My Profile</h2>
+                <div class="profile-content">
+                    <div class="profile-section">
+                        <h3>Personal Information</h3>
+                        <div class="profile-info">
+                            <div class="info-item">
+                                <span class="label">Name:</span>
+                                <span id="profile-name"></span>
+                            </div>
+                            <div class="info-item">
+                                <span class="label">Email:</span>
+                                <span id="profile-email"></span>
+                            </div>
+                            <div class="info-item">
+                                <span class="label">Phone:</span>
+                                <span id="profile-phone"></span>
+                            </div>
+                        </div>
+                    </div>
+                    <button id="logout-btn" class="logout-btn">Log Out</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modals -->
+    <div id="invite-modal" class="modal hidden">
+        <div class="modal-backdrop" onclick="closeSimpleInviteModal()"></div>
+        <div class="modal-content">
+            <button type="button" class="modal-close-x" onclick="closeSimpleInviteModal()">×</button>
+            <h3>Invite Friends</h3>
+            <p>Share this code with your friends to join the trip:</p>
+            <div class="code-display">
+                <code id="invite-code"></code>
+                <button type="button" id="copy-code-btn" onclick="copyInviteCode()">Copy</button>
+            </div>
+            <button type="button" id="close-invite-modal" class="modal-close" onclick="closeSimpleInviteModal()">Close</button>
+        </div>
+    </div>
+
+    <div id="join-modal" class="modal hidden">
+        <div class="modal-content">
+            <h3>Join a Trip</h3>
+            <input type="text" id="join-code-input" placeholder="Enter trip code">
+            <button id="join-trip-submit">Join Trip</button>
+            <button id="close-join-modal" class="modal-close">Cancel</button>
+        </div>
+    </div>
+
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <!-- Production configuration -->
+    <script src="production-config.js"></script>
+    <!-- Socket.io disabled in production -->
+    <script>
+        // Only load socket.io in development
+        if (window.location.hostname === 'localhost') {
+            const script = document.createElement('script');
+            script.src = '/socket.io/socket.io.js';
+            document.head.appendChild(script);
+        }
+    </script>
+    <script src="auth.js?v=5"></script>
+    <script src="auth-modal.js?v=1"></script>
+    <script src="calendar.js?v=5"></script>
+    <script src="guest-selector.js?v=1"></script>
+    <script src="itinerary-cards.js?v=1"></script>
+    <script src="flights.js?v=1"></script>
+    <script src="flights-page.js?v=1"></script>
+    <script src="flights-enhanced.js"></script>
+    <script src="stays.js?v=1"></script>
+    <script src="activities.js?v=1"></script>
+    <script src="places.js?v=1"></script>
+    <script src="places-autocomplete.js?v=1"></script>
+    <script src="location-inputs.js?v=1"></script>
+    <script src="trip-hero.js?v=1"></script>
+    <script src="search-handler.js?v=1"></script>
+    <script src="app.js?v=5"></script>
+    <script src="stays.js"></script>
+    <script src="interactions.js"></script>
+    <script src="enhanced-interactions.js"></script>
+</body>
+</html>

@@ -1,8 +1,12 @@
 {
   "compilerOptions": {
     "target": "ES2022",
-    "module": "ES2022",
-    "lib": ["ES2022"],
+    "module": "esnext",
+    "lib": [
+      "ES2022",
+      "DOM",
+      "DOM.Iterable"
+    ],
     "declaration": true,
     "strict": true,
     "esModuleInterop": true,
@@ -15,9 +19,24 @@
     "jsx": "preserve",
     "incremental": true,
     "paths": {
-      "@/*": ["./*"]
-    }
+      "@/*": [
+        "./src/*"
+      ]
+    },
+    "allowJs": true,
+    "plugins": [
+      {
+        "name": "next"
+      }
+    ]
   },
-  "include": ["amplify/**/*"],
-  "exclude": ["node_modules", "amplify/**/*.js", "amplify/**/*.d.ts"]
+  "include": [
+    "amplify/**/*",
+    ".next/types/**/*.ts"
+  ],
+  "exclude": [
+    "node_modules",
+    "amplify/**/*.js",
+    "amplify/**/*.d.ts"
+  ]
 }

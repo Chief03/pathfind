@@ -1,7 +1,7 @@
-import type { Schema } from '../../data/resource';
+import type { Handler } from 'aws-lambda';
 
 // Event fetching handler - integrates with multiple event APIs
-export const handler: Schema["fetchEvents"]["functionHandler"] = async (event) => {
+export const handler: Handler = async (event: any) => {
   const { city, startDate, endDate } = event.arguments;
   
   const events = [];

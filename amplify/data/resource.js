@@ -1,8 +1,14 @@
 import { a, defineData } from '@aws-amplify/backend';
+<<<<<<< Updated upstream
 // Temporarily disabled for auth testing
 // import { fetchEventsFunction } from '../functions/fetch-events/resource.ts';
 // import { validateDestinationFunction } from '../functions/validate-destination/resource.js';
 // import { createTripFunction } from '../functions/create-trip/resource.js';
+=======
+import { fetchEventsFunction } from '../functions/fetch-events/resource.js';
+import { validateDestinationFunction } from '../functions/validate-destination/resource.js';
+import { createTripFunction } from '../functions/create-trip/resource.js';
+>>>>>>> Stashed changes
 
 /*========== The application schema ==========*/
 const schema = a.schema({

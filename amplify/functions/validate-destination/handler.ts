@@ -1,4 +1,4 @@
-import type { Schema } from '../../data/resource';
+import type { Handler } from 'aws-lambda';
 
 interface GeocodingResult {
   place_id: string;
@@ -19,7 +19,7 @@ interface GeocodingResult {
  * Validates if a destination is a real city/location
  * Returns normalized location data if valid, throws error if invalid
  */
-export const handler: Schema["validateDestination"]["functionHandler"] = async (event) => {
+export const handler: Handler = async (event: any) => {
   const { destination } = event.arguments;
   
   if (!destination || destination.trim().length < 2) {
@@ -52,7 +52,7 @@ export const handler: Schema["validateDestination"]["functionHandler"] = async (
       throw new Error('Failed to validate destination');
     }
 
-    const results: GeocodingResult[] = await response.json();
+    const results = await response.json() as GeocodingResult[];
 
     // Filter for actual cities/towns (not just any location)
     const cityResults = results.filter(r => 

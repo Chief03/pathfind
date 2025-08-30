@@ -69,7 +69,12 @@ export default function TripOverviewModern({ tripData, onTripUpdate, flightCount
         updateData.startDate = editValues.startDate
         updateData.endDate = editValues.endDate
       } else if (field === 'destination') {
-        updateData.destinationCity = editValues.destinationCity
+        // Clean up common typos before saving
+        let cleanDestination = editValues.destinationCity
+        if (cleanDestination.match(/^C+colorado$/i)) {
+          cleanDestination = 'Colorado'
+        }
+        updateData.destinationCity = cleanDestination
         updateData.departureCity = editValues.departureCity
       } else {
         updateData[field] = editValues[field as keyof typeof editValues]
@@ -255,12 +260,6 @@ export default function TripOverviewModern({ tripData, onTripUpdate, flightCount
             <div className="mt-2 flex items-center gap-4 text-sm text-gray-600">
               <span className="flex items-center gap-1">
                 <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
-                </svg>
-                Created {new Date(tripData?.createdAt || Date.now()).toLocaleDateString()}
-              </span>
-              <span className="flex items-center gap-1">
-                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 20l4-16m2 16l4-16M6 9h14M4 15h14" />
                 </svg>
                 {tripData?.shareCode}
@@ -347,7 +346,16 @@ export default function TripOverviewModern({ tripData, onTripUpdate, flightCount
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
                 </svg>
-                <span className="text-lg font-bold text-gray-900">{tripData?.destinationCity || 'Not set'}</span>
+                <span className="text-lg font-bold text-gray-900">
+                  {(() => {
+                    const destination = tripData?.destinationCity || 'Not set'
+                    // Fix common typos
+                    if (destination.match(/^C+colorado$/i)) {
+                      return 'Colorado'
+                    }
+                    return destination
+                  })()}
+                </span>
               </div>
               {tripData?.departureCity && (
                 <p className="text-sm text-gray-500 flex items-center gap-1">
@@ -457,96 +465,74 @@ export default function TripOverviewModern({ tripData, onTripUpdate, flightCount
 
         {/* Group Size Widget */}
         <div className="bg-white rounded-xl border border-gray-200 p-4 hover:shadow-lg transition-all hover:scale-[1.02]">
-          <div className="flex items-center justify-between mb-2">
-            <h3 className="text-xs font-bold text-gray-400 uppercase tracking-wider">Travelers</h3>
-            {!isEditing && (
-              <button
-                onClick={() => setIsEditing('groupSize')}
-                className="p-1.5 hover:bg-gray-100 rounded-lg transition-colors"
-              >
-                <svg className="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} 
-                    d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" />
-                </svg>
-              </button>
-            )}
+          <div className="flex items-center justify-between mb-3">
+            <h3 className="text-xs font-bold text-gray-400 uppercase tracking-wider">Group Size</h3>
           </div>
-          {isEditing === 'groupSize' ? (
-            <div className="space-y-3">
-              <div className="flex items-center gap-2">
-                <button
-                  onClick={() => setEditValues({ ...editValues, groupSize: Math.max(1, editValues.groupSize - 1) })}
-                  className="w-8 h-8 bg-gray-100 hover:bg-gray-200 rounded-full flex items-center justify-center transition-colors"
-                >
-                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M20 12H4" />
-                  </svg>
-                </button>
-                <input
-                  type="number"
-                  value={editValues.groupSize}
-                  onChange={(e) => setEditValues({ ...editValues, groupSize: parseInt(e.target.value) || 1 })}
-                  min="1"
-                  max="20"
-                  className="flex-1 px-3 py-2 border border-purple-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500 text-center text-lg font-semibold"
-                />
-                <button
-                  onClick={() => setEditValues({ ...editValues, groupSize: Math.min(20, editValues.groupSize + 1) })}
-                  className="w-8 h-8 bg-gray-100 hover:bg-gray-200 rounded-full flex items-center justify-center transition-colors"
-                >
-                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
-                  </svg>
-                </button>
-              </div>
-              <div className="flex gap-2">
-                <button
-                  onClick={() => handleSave('groupSize')}
-                  className="flex-1 px-3 py-1.5 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors text-sm"
-                >
-                  Save
-                </button>
-                <button
-                  onClick={handleCancel}
-                  className="flex-1 px-3 py-1.5 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 transition-colors text-sm"
-                >
-                  Cancel
-                </button>
-              </div>
+          <div className="flex items-center justify-between">
+            <button
+              type="button"
+              onClick={async () => {
+                const newSize = Math.max(1, (tripData?.groupSize || 2) - 1)
+                try {
+                  const client = generateClient()
+                  const { data: updatedTrip } = await (client as any).models.Trip.update({
+                    id: tripData.id,
+                    groupSize: newSize
+                  })
+                  if (updatedTrip) {
+                    onTripUpdate(updatedTrip)
+                    trackActivity({
+                      type: 'update',
+                      category: 'trip',
+                      action: `Updated group size to ${newSize}`
+                    })
+                  }
+                } catch (error) {
+                  console.error('Error updating group size:', error)
+                }
+              }}
+              className="w-10 h-10 bg-gray-100 hover:bg-gray-200 rounded-full flex items-center justify-center transition-colors"
+            >
+              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M20 12H4" />
+              </svg>
+            </button>
+            
+            <div className="flex items-center gap-2">
+              <span className="text-2xl font-bold text-gray-900 min-w-[60px] text-center">
+                {tripData?.groupSize || 2} {tripData?.groupSize === 1 ? 'person' : 'people'}
+              </span>
             </div>
-          ) : (
-            <>
-              <div className="flex items-center gap-3">
-                <div className="flex -space-x-2">
-                  {[...Array(Math.min(tripData?.groupSize || 1, 4))].map((_, i) => (
-                    <div
-                      key={i}
-                      className="w-8 h-8 rounded-full bg-gradient-to-br from-red-400 to-purple-500 border-2 border-white flex items-center justify-center text-white font-semibold text-xs"
-                    >
-                      {i === 0 ? 'You' : i + 1}
-                    </div>
-                  ))}
-                  {(tripData?.groupSize || 1) > 4 && (
-                    <div className="w-8 h-8 rounded-full bg-gray-200 border-2 border-white flex items-center justify-center text-gray-600 font-semibold text-xs">
-                      +{(tripData?.groupSize || 1) - 4}
-                    </div>
-                  )}
-                </div>
-                <div>
-                  <p className="text-xl font-bold text-gray-900">{tripData?.groupSize || 1}</p>
-                  <p className="text-[10px] text-gray-500">
-                    {tripData?.groupSize === 1 ? 'Solo' : 'People'}
-                  </p>
-                </div>
-              </div>
-              <button
-                onClick={() => setIsEditing('groupSize')}
-                className="mt-2 text-xs text-purple-600 hover:text-purple-700 font-medium"
-              >
-                Change →
-              </button>
-            </>
-          )}
+            
+            <button
+              type="button"
+              onClick={async () => {
+                const newSize = Math.min(20, (tripData?.groupSize || 2) + 1)
+                try {
+                  const client = generateClient()
+                  const { data: updatedTrip } = await (client as any).models.Trip.update({
+                    id: tripData.id,
+                    groupSize: newSize
+                  })
+                  if (updatedTrip) {
+                    onTripUpdate(updatedTrip)
+                    trackActivity({
+                      type: 'update',
+                      category: 'trip',
+                      action: `Updated group size to ${newSize}`
+                    })
+                  }
+                } catch (error) {
+                  console.error('Error updating group size:', error)
+                }
+              }}
+              className="w-10 h-10 bg-gray-100 hover:bg-gray-200 rounded-full flex items-center justify-center transition-colors"
+            >
+              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+              </svg>
+            </button>
+          </div>
         </div>
 
         {/* Share Code Widget */}

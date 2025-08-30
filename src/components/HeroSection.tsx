@@ -12,6 +12,9 @@ interface HeroSectionProps {
 export default function HeroSection({ onTripCreated }: HeroSectionProps) {
   const { user } = useAuthenticator((context) => [context.user])
   const [showAuthModal, setShowAuthModal] = useState(false)
+  const [showJoinModal, setShowJoinModal] = useState(false)
+  const [shareCode, setShareCode] = useState('')
+  const [joinError, setJoinError] = useState('')
   const [formData, setFormData] = useState({
     tripName: '',
     destination: '',
@@ -62,6 +65,37 @@ export default function HeroSection({ onTripCreated }: HeroSectionProps) {
       code += chars.charAt(Math.floor(Math.random() * chars.length))
     }
     return code
+  }
+
+  const handleJoinTrip = async () => {
+    if (!shareCode.trim()) {
+      setJoinError('Please enter a share code')
+      return
+    }
+
+    if (!user) {
+      setShowAuthModal(true)
+      return
+    }
+
+    try {
+      const client = generateClient()
+      
+      // Find trip by share code
+      const { data: trips } = await (client as any).models.Trip.list({
+        filter: { shareCode: { eq: shareCode.toUpperCase() } }
+      })
+
+      if (trips && trips.length > 0) {
+        onTripCreated(trips[0])
+        setShowJoinModal(false)
+      } else {
+        setJoinError('Invalid share code. Please check and try again.')
+      }
+    } catch (error) {
+      console.error('Error joining trip:', error)
+      setJoinError('Failed to join trip. Please try again.')
+    }
   }
 
   return (
@@ -168,12 +202,92 @@ export default function HeroSection({ onTripCreated }: HeroSectionProps) {
               </div>
             </div>
 
-            <button type="submit" className="btn-primary w-full text-lg py-4">
-              Start Planning Your Trip
-            </button>
+            <div className="space-y-4">
+              <button type="submit" className="btn-primary w-full text-lg py-4">
+                Start Planning Your Trip
+              </button>
+              
+              <div className="relative">
+                <div className="absolute inset-0 flex items-center">
+                  <div className="w-full border-t border-gray-300"></div>
+                </div>
+                <div className="relative flex justify-center text-sm">
+                  <span className="px-4 bg-white text-gray-500">OR</span>
+                </div>
+              </div>
+              
+              <button 
+                type="button"
+                onClick={() => setShowJoinModal(true)}
+                className="w-full text-lg py-4 px-6 border-2 border-purple-600 text-purple-600 rounded-lg hover:bg-purple-50 transition-colors font-semibold"
+              >
+                Join Existing Trip with Code
+              </button>
+            </div>
           </form>
         </div>
       </div>
+
+      {/* Join Trip Modal */}
+      {showJoinModal && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
+          <div className="bg-white rounded-xl p-8 max-w-md w-full mx-4">
+            <button
+              onClick={() => {
+                setShowJoinModal(false)
+                setJoinError('')
+                setShareCode('')
+              }}
+              className="float-right text-gray-500 hover:text-gray-700"
+            >
+              ✕
+            </button>
+            
+            <div className="text-center mb-6">
+              <h2 className="text-2xl font-bold text-gray-900 mb-2">Join a Trip</h2>
+              <p className="text-gray-600">Enter the share code from your friend</p>
+            </div>
+
+            <div className="space-y-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Trip Share Code
+                </label>
+                <input
+                  type="text"
+                  value={shareCode}
+                  onChange={(e) => {
+                    setShareCode(e.target.value.toUpperCase())
+                    setJoinError('')
+                  }}
+                  placeholder="e.g. ABC12345"
+                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent text-center text-xl font-mono uppercase"
+                  maxLength={8}
+                />
+                {joinError && (
+                  <p className="text-red-500 text-sm mt-2">{joinError}</p>
+                )}
+              </div>
+
+              <button
+                onClick={handleJoinTrip}
+                disabled={!shareCode.trim()}
+                className={`w-full py-3 px-6 rounded-lg font-semibold transition-colors ${
+                  shareCode.trim() 
+                    ? 'bg-purple-600 text-white hover:bg-purple-700' 
+                    : 'bg-gray-200 text-gray-400 cursor-not-allowed'
+                }`}
+              >
+                Join Trip
+              </button>
+
+              <p className="text-center text-sm text-gray-500">
+                Don't have a code? Ask your trip organizer to share it with you.
+              </p>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Auth Modal */}
       {showAuthModal && (

@@ -7,6 +7,8 @@ import { getEventSuggestions, eventCategories, EventSuggestion } from '../lib/ev
 import { fetchUserAttributes } from 'aws-amplify/auth'
 import TripOverviewModern from './TripOverviewModern'
 import FlightManagement from './FlightManagement'
+import ItineraryLuxe from './ItineraryLuxe'
+import PlacesDiscovery from './PlacesDiscovery'
 
 interface TripDashboardProps {
   tripData: any
@@ -256,63 +258,11 @@ export default function TripDashboard({ tripData: initialTripData }: TripDashboa
           )}
 
           {activeTab === 'itinerary' && (
-            <div>
-              <h2 className="text-2xl font-bold mb-4">Itinerary</h2>
-              {itinerary.length === 0 ? (
-                <p className="text-gray-500">No items in your itinerary yet.</p>
-              ) : (
-                <div className="space-y-4">
-                  {itinerary.map(item => (
-                    <div key={item.id} className="border rounded-lg p-4">
-                      <h3 className="font-semibold">{item.title}</h3>
-                      <p className="text-sm text-gray-600">{item.location}</p>
-                      <p className="text-sm text-gray-600">
-                        {item.date} {item.time && `at ${item.time}`}
-                      </p>
-                      {item.description && (
-                        <p className="mt-2 text-gray-700">{item.description}</p>
-                      )}
-                    </div>
-                  ))}
-                </div>
-              )}
-              <button
-                onClick={() => setShowAddEvent(true)}
-                className="mt-4 px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600"
-              >
-                Add to Itinerary
-              </button>
-            </div>
+            <ItineraryLuxe tripData={tripData} />
           )}
 
           {activeTab === 'places' && (
-            <div>
-              <h2 className="text-2xl font-bold mb-4">Places to Visit</h2>
-              {places.length === 0 ? (
-                <p className="text-gray-500">No places saved yet.</p>
-              ) : (
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  {places.map(place => (
-                    <div key={place.id} className="border rounded-lg p-4">
-                      <h3 className="font-semibold">{place.name}</h3>
-                      {place.address && (
-                        <p className="text-sm text-gray-600">{place.address}</p>
-                      )}
-                      {place.category && (
-                        <span className="inline-block mt-2 px-2 py-1 bg-gray-100 text-gray-700 text-xs rounded">
-                          {place.category}
-                        </span>
-                      )}
-                      {place.rating && (
-                        <p className="mt-2 text-sm">
-                          Rating: {'⭐'.repeat(Math.round(place.rating))}
-                        </p>
-                      )}
-                    </div>
-                  ))}
-                </div>
-              )}
-            </div>
+            <PlacesDiscovery tripData={tripData} />
           )}
 
           {activeTab === 'budget' && (

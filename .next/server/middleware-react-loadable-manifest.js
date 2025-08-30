@@ -1,1 +1,1 @@
-self.__REACT_LOADABLE_MANIFEST="{}";
+self.__REACT_LOADABLE_MANIFEST="{\"components/ItineraryLuxe.tsx -> @/lib/eventSuggestions\":{\"id\":\"components/ItineraryLuxe.tsx -> @/lib/eventSuggestions\",\"files\":[]}}"

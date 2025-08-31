@@ -1,0 +1,19 @@
+{
+  "version": "1.4",
+  "auth": {
+    "aws_region": "us-east-1",
+    "user_pool_id": "PLACEHOLDER_USER_POOL_ID",
+    "user_pool_client_id": "PLACEHOLDER_CLIENT_ID",
+    "identity_pool_id": "PLACEHOLDER_IDENTITY_POOL_ID",
+    "auth_flow_type": "USER_SRP_AUTH"
+  },
+  "data": {
+    "aws_region": "us-east-1",
+    "url": "PLACEHOLDER_APPSYNC_URL",
+    "default_authorization_mode": "AMAZON_COGNITO_USER_POOLS"
+  },
+  "storage": {
+    "aws_region": "us-east-1",
+    "bucket_name": "PLACEHOLDER_BUCKET_NAME"
+  }
+}

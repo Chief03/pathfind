@@ -126,7 +126,7 @@ export default function ItineraryCompact({ tripData }: ItineraryCompactProps) {
       
       addActivity({
         type: 'create',
-        category: 'itinerary',
+        category: 'event',
         action: `Added ${suggestion.title} to itinerary`,
         details: itemData
       })
@@ -143,7 +143,7 @@ export default function ItineraryCompact({ tripData }: ItineraryCompactProps) {
       
       addActivity({
         type: 'delete',
-        category: 'itinerary',
+        category: 'event',
         action: 'Removed item from itinerary',
         details: { itemId }
       })
@@ -183,7 +183,7 @@ export default function ItineraryCompact({ tripData }: ItineraryCompactProps) {
       
       addActivity({
         type: 'update',
-        category: 'itinerary',
+        category: 'event',
         action: `Moved ${draggedItem.title} to ${formatDate(newDate)}`,
         details: { itemId: draggedItem.id, newDate }
       })
@@ -515,9 +515,8 @@ export default function ItineraryCompact({ tripData }: ItineraryCompactProps) {
       {showAddForm && (
         <CustomEventForm
           tripData={tripData}
-          onClose={() => setShowAddForm(false)}
+          onCancel={() => setShowAddForm(false)}
           onSave={loadItineraryItems}
-          selectedDate={selectedDate}
         />
       )}
     </div>

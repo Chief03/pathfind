@@ -791,7 +791,7 @@ export default function PlacesDiscoveryLuxeFixed({ tripData }: PlacesDiscoveryLu
 
                   {viewMode === 'suggestions' && place.tags && place.tags.length > 0 && (
                     <div className="pt-3 flex flex-wrap gap-1">
-                      {place.tags.slice(0, 3).map(tag => (
+                      {place.tags.slice(0, 3).map((tag: string) => (
                         <span key={tag} className="text-xs px-2 py-1 bg-gray-100 text-gray-600 rounded-full">
                           {tag}
                         </span>

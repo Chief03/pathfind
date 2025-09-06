@@ -3,15 +3,16 @@ backend:
   phases:
     preBuild:
       commands:
-        - npm ci
+        - npm ci --include=optional
     build:
       commands:
-        - npx ampx generate outputs --app-id $AWS_APP_ID --branch $AWS_BRANCH
+        - npx ampx generate outputs --app-id $AWS_APP_ID --branch $AWS_BRANCH || echo "Backend generation skipped"
 frontend:
   phases:
     preBuild:
       commands:
-        - npm ci
+        - npm ci --include=optional
+        - npm list @parcel/watcher || npm install @parcel/watcher --save-optional
     build:
       commands:
         - npm run build

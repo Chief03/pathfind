@@ -67,4 +67,4 @@ amplify/.config/local-*
 
 # Temporary files
 tmp/
-temp/
+temp/.next

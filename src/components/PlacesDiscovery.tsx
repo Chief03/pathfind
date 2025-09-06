@@ -65,7 +65,7 @@ export default function PlacesDiscovery({ tripData }: PlacesDiscoveryProps) {
     priceLevel: 0 // 0 = all, 1-4 = specific levels
   })
   const [searchQuery, setSearchQuery] = useState('')
-  const { trackActivity } = useActivityTracker()
+  const { addActivity } = useActivityTracker()
 
   useEffect(() => {
     if (tripData?.id) {
@@ -116,7 +116,7 @@ export default function PlacesDiscovery({ tripData }: PlacesDiscoveryProps) {
         if (existingPlaces && existingPlaces.length > 0) {
           await (client as any).models.Place.delete({ id: existingPlaces[0].id })
           setSavedPlaces(savedPlaces.filter(id => id !== place.id))
-          trackActivity({
+          addActivity({
             type: 'delete',
             category: 'place',
             action: `Removed "${place.name}" from saved places`
@@ -136,7 +136,7 @@ export default function PlacesDiscovery({ tripData }: PlacesDiscoveryProps) {
           notes: place.description
         })
         setSavedPlaces([...savedPlaces, place.id])
-        trackActivity({
+        addActivity({
           type: 'create',
           category: 'place',
           action: `Saved "${place.name}" to places`
@@ -163,7 +163,7 @@ export default function PlacesDiscovery({ tripData }: PlacesDiscoveryProps) {
         eventSource: 'Places'
       })
       
-      trackActivity({
+      addActivity({
         type: 'create',
         category: 'trip',
         action: `Added "${place.name}" to itinerary`

@@ -97,7 +97,7 @@ export default function ItineraryBookshelf({ tripData }: ItineraryBookshelfProps
   const [dragOverDate, setDragOverDate] = useState<string | null>(null)
   const [selectedDate, setSelectedDate] = useState<string | null>(null)
   const [hoveredBook, setHoveredBook] = useState<string | null>(null)
-  const { trackActivity } = useActivityTracker()
+  const { addActivity } = useActivityTracker()
 
   // Generate array of dates for the trip
   const getTripDates = () => {
@@ -203,7 +203,7 @@ export default function ItineraryBookshelf({ tripData }: ItineraryBookshelfProps
       if (newItem) {
         setItems([...items, newItem])
         setShowAddForm(false)
-        trackActivity({
+        addActivity({
           type: 'create',
           category: 'trip',
           action: `Added "${itemData.title}" to itinerary`
@@ -225,7 +225,7 @@ export default function ItineraryBookshelf({ tripData }: ItineraryBookshelfProps
       if (updatedItem) {
         setItems(items.map(item => item.id === itemId ? updatedItem : item))
         setEditingItem(null)
-        trackActivity({
+        addActivity({
           type: 'update',
           category: 'trip',
           action: `Updated "${updates.title || 'item'}" in itinerary`
@@ -245,7 +245,7 @@ export default function ItineraryBookshelf({ tripData }: ItineraryBookshelfProps
       await (client as any).models.ItineraryItem.delete({ id: itemId })
       
       setItems(items.filter(item => item.id !== itemId))
-      trackActivity({
+      addActivity({
         type: 'delete',
         category: 'trip',
         action: `Removed "${item?.title}" from itinerary`
@@ -290,7 +290,7 @@ export default function ItineraryBookshelf({ tripData }: ItineraryBookshelfProps
       ...generateSmartTime(date, items.filter(i => i.id !== draggedItem.id))
     })
     
-    trackActivity({
+    addActivity({
       type: 'update',
       category: 'trip',
       action: `Moved "${draggedItem.title}" to ${new Date(date).toLocaleDateString()}`

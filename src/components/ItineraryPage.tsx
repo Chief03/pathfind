@@ -43,7 +43,7 @@ export default function ItineraryPage({ tripData }: ItineraryPageProps) {
   const [suggestions, setSuggestions] = useState<any[]>([])
   const [loadingSuggestions, setLoadingSuggestions] = useState(false)
   const [draggedItem, setDraggedItem] = useState<ItineraryItem | null>(null)
-  const { trackActivity } = useActivityTracker()
+  const { addActivity } = useActivityTracker()
 
   // Fetch itinerary items
   useEffect(() => {
@@ -107,7 +107,7 @@ export default function ItineraryPage({ tripData }: ItineraryPageProps) {
       if (newItem) {
         setItems([...items, newItem])
         setShowAddForm(false)
-        trackActivity({
+        addActivity({
           type: 'create',
           category: 'trip',
           action: `Added "${itemData.title}" to itinerary`
@@ -129,7 +129,7 @@ export default function ItineraryPage({ tripData }: ItineraryPageProps) {
       if (updatedItem) {
         setItems(items.map(item => item.id === itemId ? updatedItem : item))
         setEditingItem(null)
-        trackActivity({
+        addActivity({
           type: 'update',
           category: 'trip',
           action: `Updated "${updates.title || 'item'}" in itinerary`
@@ -149,7 +149,7 @@ export default function ItineraryPage({ tripData }: ItineraryPageProps) {
       
       const itemTitle = items.find(i => i.id === itemId)?.title
       setItems(items.filter(item => item.id !== itemId))
-      trackActivity({
+      addActivity({
         type: 'delete',
         category: 'trip',
         action: `Removed "${itemTitle}" from itinerary`

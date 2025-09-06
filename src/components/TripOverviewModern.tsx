@@ -91,7 +91,7 @@ export default function TripOverviewModern({ tripData, onTripUpdate, flightCount
       })
       
       if (onTripUpdate) {
-        onTripUpdate(updatedTrip)
+        onTripUpdate?.(updatedTrip)
       }
       
       setIsEditing(null)
@@ -480,8 +480,8 @@ export default function TripOverviewModern({ tripData, onTripUpdate, flightCount
                     groupSize: newSize
                   })
                   if (updatedTrip) {
-                    onTripUpdate(updatedTrip)
-                    trackActivity({
+                    onTripUpdate?.(updatedTrip)
+                    addActivity({
                       type: 'update',
                       category: 'trip',
                       action: `Updated group size to ${newSize}`
@@ -515,8 +515,8 @@ export default function TripOverviewModern({ tripData, onTripUpdate, flightCount
                     groupSize: newSize
                   })
                   if (updatedTrip) {
-                    onTripUpdate(updatedTrip)
-                    trackActivity({
+                    onTripUpdate?.(updatedTrip)
+                    addActivity({
                       type: 'update',
                       category: 'trip',
                       action: `Updated group size to ${newSize}`

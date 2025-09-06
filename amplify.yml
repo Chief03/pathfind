@@ -1,4 +1,12 @@
 version: 1
+backend:
+  phases:
+    preBuild:
+      commands:
+        - npm ci
+    build:
+      commands:
+        - npx ampx generate outputs --app-id $AWS_APP_ID --branch $AWS_BRANCH
 frontend:
   phases:
     preBuild:
@@ -6,12 +14,12 @@ frontend:
         - npm ci
     build:
       commands:
-        # No build step needed for static files
-        - echo "Preparing static files for deployment"
+        - npm run build
   artifacts:
-    baseDirectory: public
+    baseDirectory: .next
     files:
       - '**/*'
   cache:
     paths:
       - node_modules/**/*
+      - .next/cache/**/*

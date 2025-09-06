@@ -6,7 +6,9 @@ backend:
         - npm ci --include=optional
     build:
       commands:
-        - npx ampx generate outputs --app-id $AWS_APP_ID --branch $AWS_BRANCH || echo "Backend generation skipped"
+        # Deploy backend and generate outputs
+        - npx ampx pipeline-deploy --branch $AWS_BRANCH --app-id $AWS_APP_ID
+        - npx ampx generate outputs --app-id $AWS_APP_ID --branch $AWS_BRANCH
 frontend:
   phases:
     preBuild:
@@ -15,6 +17,8 @@ frontend:
         - npm list @parcel/watcher || npm install @parcel/watcher --save-optional
     build:
       commands:
+        - echo "Checking for amplify_outputs.json..."
+        - ls -la amplify_outputs.json || echo "Warning: amplify_outputs.json not found"
         - npm run build
   artifacts:
     baseDirectory: .next

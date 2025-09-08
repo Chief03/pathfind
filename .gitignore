@@ -65,6 +65,17 @@ amplify/.config/local-*
 *.tsbuildinfo
 .tsbuildinfo
 
+# Next.js
+.next/
+
 # Temporary files
 tmp/
-temp/.next
+temp/
+
+# Old/backup files
+node_modules.old/
+*.bak
+
+# Test HTML files
+public/test-*.html
+public/.env.example

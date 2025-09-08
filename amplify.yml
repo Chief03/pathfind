@@ -9,6 +9,8 @@ backend:
         # Deploy backend and generate outputs
         - npx ampx pipeline-deploy --branch $AWS_BRANCH --app-id $AWS_APP_ID
         - npx ampx generate outputs --app-id $AWS_APP_ID --branch $AWS_BRANCH
+        # Verify outputs were generated
+        - test -f amplify_outputs.json || (echo "ERROR: amplify_outputs.json not generated" && exit 1)
 frontend:
   phases:
     preBuild:
@@ -18,8 +20,9 @@ frontend:
     build:
       commands:
         - echo "Checking for amplify_outputs.json..."
-        - ls -la amplify_outputs.json || echo "Warning: amplify_outputs.json not found"
-        - npm run build
+        - test -f amplify_outputs.json || (echo "ERROR: amplify_outputs.json not found" && exit 1)
+        - echo "Building Next.js application..."
+        - npm run build:prod || npm run build
   artifacts:
     baseDirectory: .next
     files:

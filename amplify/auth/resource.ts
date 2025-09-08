@@ -34,4 +34,11 @@ export const auth = defineAuth({
       mutable: true,
     },
   },
+  // Add MFA as optional for production security
+  multifactor: {
+    mode: 'OPTIONAL',
+    totp: true,
+  },
+  // Add account recovery options
+  accountRecovery: 'EMAIL_ONLY',
 });

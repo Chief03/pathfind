@@ -21,6 +21,10 @@ export const auth = defineAuth({
       required: true,
       mutable: true,
     },
+    nickname: {
+      required: false,
+      mutable: true,
+    },
     phoneNumber: {
       required: false,
       mutable: true,
@@ -30,4 +34,11 @@ export const auth = defineAuth({
       mutable: true,
     },
   },
+  // Add MFA as optional for production security
+  multifactor: {
+    mode: 'OPTIONAL',
+    totp: true,
+  },
+  // Add account recovery options
+  accountRecovery: 'EMAIL_ONLY',
 });

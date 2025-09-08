@@ -1,17 +1,30 @@
 import { a, defineData } from '@aws-amplify/backend';
-<<<<<<< Updated upstream
-// Temporarily disabled for auth testing
-// import { fetchEventsFunction } from '../functions/fetch-events/resource.ts';
-// import { validateDestinationFunction } from '../functions/validate-destination/resource.js';
-// import { createTripFunction } from '../functions/create-trip/resource.js';
-=======
 import { fetchEventsFunction } from '../functions/fetch-events/resource.js';
-import { validateDestinationFunction } from '../functions/validate-destination/resource.js';
-import { createTripFunction } from '../functions/create-trip/resource.js';
->>>>>>> Stashed changes
 
 /*========== The application schema ==========*/
 const schema = a.schema({
+  // UserProfile model - stores additional user information
+  UserProfile: a
+    .model({
+      userId: a.id().required(), // Cognito User ID
+      email: a.email().required(),
+      firstName: a.string().required(),
+      lastName: a.string().required(),
+      nickname: a.string(),
+      phoneNumber: a.phone(),
+      birthdate: a.date(),
+      profilePicture: a.url(),
+      bio: a.string(),
+      preferences: a.json(), // Store user preferences as JSON
+      createdAt: a.datetime(),
+      lastLoginAt: a.datetime(),
+      isEmailVerified: a.boolean().default(false),
+    })
+    .authorization(allow => [
+      allow.ownerDefinedIn('userId'), // Only the user can access their own profile
+      allow.authenticated().to(['read']), // Other authenticated users can read basic info
+    ]),
+  
   // Trip model - the main entity for trip planning
   Trip: a
     .model({
@@ -148,46 +161,34 @@ const schema = a.schema({
       index('city').sortKeys(['date', 'time']).queryField('eventsByCity'),
     ]),
 
-  // Custom queries and mutations - temporarily disabled for auth testing
-  
-  // // Validate a destination to ensure it's a real city
-  // validateDestination: a
-  //   .query()
-  //   .arguments({
-  //     destination: a.string().required(),
-  //   })
-  //   .returns(a.json())
-  //   .authorization(allow => [allow.publicApiKey(), allow.authenticated()])
-  //   .handler(a.handler.function(validateDestinationFunction)),
+  // Custom queries and mutations
+  fetchEvents: a
+    .query()
+    .arguments({
+      city: a.string().required(),
+      startDate: a.string().required(),
+      endDate: a.string().required(),
+    })
+    .returns(a.json())
+    .authorization(allow => [allow.publicApiKey(), allow.authenticated()])
+    .handler(a.handler.function(fetchEventsFunction)),
 
-  // // Create a trip with validated destinations
-  // createValidatedTrip: a
-  //   .mutation()
-  //   .arguments({
-  //     name: a.string().required(),
-  //     departureCity: a.string(),
-  //     destinationCity: a.string().required(),
-  //     startDate: a.date().required(),
-  //     endDate: a.date().required(),
-  //     groupSize: a.integer(),
-  //     description: a.string(),
-  //   })
-  //   .returns(a.ref('Trip'))
-  //   .authorization(allow => [allow.publicApiKey(), allow.authenticated()])
-  //   .handler(a.handler.function(createTripFunction)),
-
-  // // Fetch events for a city
-  // fetchEvents: a
-  //   .query()
-  //   .arguments({
-  //     city: a.string().required(),
-  //     startDate: a.string().required(),
-  //     endDate: a.string().required(),
-  //   })
-  //   .returns(a.json())
-  //   .authorization(allow => [allow.publicApiKey(), allow.authenticated()])
-  //   .handler(a.handler.function(fetchEventsFunction)),
+  // Anonymous trip creation
+  createAnonymousTrip: a
+    .mutation()
+    .arguments({
+      name: a.string().required(),
+      destinationCity: a.string().required(),
+      startDate: a.string().required(),
+      endDate: a.string().required(),
+      groupSize: a.integer(),
+    })
+    .returns(a.ref('Trip'))
+    .authorization(allow => [allow.publicApiKey()])
+    .handler(a.handler.function(fetchEventsFunction)),
 });
+
+// export type Schema = ClientSchema<typeof schema>;
 
 export const data = defineData({
   schema,

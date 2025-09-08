@@ -1,5 +1,5 @@
 import { type ClientSchema, a, defineData } from '@aws-amplify/backend';
-import { fetchEventsFunction } from '../functions/fetch-events/resource';
+import { fetchEventsFunction } from '../functions/fetch-events/resource.js';
 
 /*========== The application schema ==========*/
 const schema = a.schema({

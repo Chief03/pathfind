@@ -1,9 +1,9 @@
 {
   "auth": {
-    "user_pool_id": "us-east-1_Lkjh4579n",
+    "user_pool_id": "us-east-1_2XXBEcOoH",
     "aws_region": "us-east-1",
-    "user_pool_client_id": "771j80ochm1kdetsmq3ubdlq5r",
-    "identity_pool_id": "us-east-1:4d182ca4-63a2-41cc-8299-2bb1686470e9",
+    "user_pool_client_id": "u3esfoc5ojf0j9lng21qra1fm",
+    "identity_pool_id": "us-east-1:5596d5d9-9d24-42dd-907c-9795534ef711",
     "mfa_methods": [],
     "standard_required_attributes": [
       "email",
@@ -28,9 +28,9 @@
     "unauthenticated_identities_enabled": false
   },
   "data": {
-    "url": "https://oa4sb66o25aknlqnq4haru5cmu.appsync-api.us-east-1.amazonaws.com/graphql",
+    "url": "https://algn7qn5bjhp5nqh3ffubfdclq.appsync-api.us-east-1.amazonaws.com/graphql",
     "aws_region": "us-east-1",
-    "api_key": "da2-oagqhcbtpbe2tg2hosagojb7bu",
+    "api_key": "da2-h6ralyybh5bu7lydpyfe77tkty",
     "default_authorization_type": "AMAZON_COGNITO_USER_POOLS",
     "authorization_types": [
       "API_KEY",
@@ -1318,11 +1318,11 @@
   },
   "storage": {
     "aws_region": "us-east-1",
-    "bucket_name": "amplify-pathfind-chief-sa-pathfindstoragebucketf95-sjzgbrtemzwu",
+    "bucket_name": "amplify-pathfind-abelinoc-pathfindstoragebucketf95-9noncni5ngg3",
     "buckets": [
       {
         "name": "pathfindStorage",
-        "bucket_name": "amplify-pathfind-chief-sa-pathfindstoragebucketf95-sjzgbrtemzwu",
+        "bucket_name": "amplify-pathfind-abelinoc-pathfindstoragebucketf95-9noncni5ngg3",
         "aws_region": "us-east-1",
         "paths": {
           "trip-images/*": {
@@ -1359,11 +1359,5 @@
       }
     ]
   },
-  "version": "1.4",
-  "custom": {
-    "API": {
-      "endpoint": "http://localhost:3001",
-      "region": "us-east-1"
-    }
-  }
+  "version": "1.4"
 }

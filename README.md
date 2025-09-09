@@ -77,13 +77,13 @@ pathfind/
 - Node.js 20+ 
 - npm (not yarn/pnpm)
 - AWS Account
-- AWS CLI configured
+- AWS CLI configured with appropriate credentials
 
 ### Installation
 
 1. **Clone the repository:**
    ```bash
-   git clone https://github.com/yourusername/pathfind.git
+   git clone https://github.com/ChinchillaEnterprises/pathfind.git
    cd pathfind
    ```
 
@@ -92,11 +92,19 @@ pathfind/
    npm install
    ```
 
-3. **Start the Amplify sandbox:**
+3. **Deploy the Amplify sandbox:**
    ```bash
    npm run sandbox
    ```
-   Wait for the sandbox to deploy (5-10 minutes on first run)
+   - Initial deployment takes 5-10 minutes
+   - Creates all AWS resources (DynamoDB, AppSync, Cognito, etc.)
+   - Watch for any Cognito UserPool attribute errors
+   
+   ⚠️ **Important Notes:**
+   - **Current Status:** Sandbox has been deleted due to Cognito UserPool attribute conflicts
+   - If you encounter UserPool attribute errors during updates, you'll need to delete and recreate the sandbox
+   - UserPool attributes are immutable after creation - changes require full recreation
+   - Use `npm run sandbox:delete` or manual CloudFormation stack deletion if needed
 
 4. **Start the development server:**
    ```bash
@@ -177,6 +185,18 @@ For issues or questions, please contact the development team.
 
 ---
 
-**Current Status:** 🟢 Active Development
+## ⚠️ Current Deployment Status
 
-**Last Updated:** September 2025
+**Status:** 🔴 Sandbox Deleted - Requires Fresh Deployment
+
+**Last Updated:** September 9, 2025
+
+### Known Issues
+- Cognito UserPool attribute conflicts prevent sandbox updates
+- Sandbox was manually deleted via CloudFormation due to deployment failures
+- Fresh deployment required for development
+
+### Next Steps
+1. Run `npm run sandbox` for fresh deployment
+2. Monitor for any UserPool attribute errors
+3. If errors occur, sandbox recreation will be required (deletes all user data)

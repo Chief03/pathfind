@@ -4,35 +4,25 @@ import { useState, useEffect } from 'react'
 import { generateClient } from 'aws-amplify/data'
 import { parseFlightNumber, lookupFlight } from '@/lib/flightLookup'
 import { useActivityTracker } from '@/contexts/ActivityTracker'
+import type { Schema } from '../../amplify/data/resource'
 
-interface Flight {
-  id: string
-  tripId: string
-  userId: string
+// Use the actual Flight type from the GraphQL schema
+type Flight = Schema['Flight']['type']
+
+// Extended interface for form state (includes UI-only fields)
+interface FlightFormData {
   airline: string
-  flightNumber?: string
-  arrivalDateTime: string
+  flightNumber: string
+  departureTime: string
+  arrivalTime: string
   departureAirport: string
   arrivalAirport: string
-  travelerName: string
-  confirmationNumber?: string
-  seatNumber?: string
   terminal?: string
   gate?: string
+  confirmationCode?: string
   notes?: string
-  status?: string
-  isGroupFlight?: boolean
-  guestUserIds?: string[]
-  createdAt?: string
-  updatedAt?: string
-}
-
-interface Passenger {
-  id: string
-  name: string
-  email?: string
-  isOwner?: boolean
-  seatNumber?: string
+  direction?: 'arrival' | 'departure'
+  addedByUserName: string
 }
 
 interface FlightManagementProps {
@@ -44,54 +34,32 @@ interface FlightManagementProps {
 export default function FlightManagement({ tripId, tripData, onFlightsUpdate }: FlightManagementProps) {
   const { addActivity } = useActivityTracker()
   const [flights, setFlights] = useState<Flight[]>([])
+  
+  // Initialize Amplify data client
+  const client = generateClient<Schema>()
   const [isAddingFlight, setIsAddingFlight] = useState(false)
   const [editingFlight, setEditingFlight] = useState<string | null>(null)
   const [selectedFlight, setSelectedFlight] = useState<Flight | null>(null)
-  const [passengers, setPassengers] = useState<Passenger[]>([])
   const [loading, setLoading] = useState(true)
   const [searchingFlight, setSearchingFlight] = useState(false)
   
   // Form state for new/edit flight
-  const [flightForm, setFlightForm] = useState({
+  const [flightForm, setFlightForm] = useState<FlightFormData>({
     airline: '',
     flightNumber: '',
-    arrivalDateTime: '',
+    departureTime: '',
+    arrivalTime: '',
     departureAirport: '',
     arrivalAirport: '',
-    travelerName: '',
-    confirmationNumber: '',
-    seatNumber: '',
+    confirmationCode: '',
     terminal: '',
     gate: '',
     notes: '',
-    isGroupFlight: false
+    direction: 'departure',
+    addedByUserName: 'You' // Default to current user
   })
 
-  // Passenger assignment state
-  const [passengerForm, setPassengerForm] = useState({
-    name: '',
-    email: '',
-    seatNumber: ''
-  })
-
-  // Mock passengers for the trip (would come from trip members in real app)
-  useEffect(() => {
-    const mockPassengers: Passenger[] = [
-      { id: '1', name: 'You', isOwner: true },
-      { id: '2', name: 'Friend 1' },
-      { id: '3', name: 'Friend 2' }
-    ]
-    
-    if (tripData?.groupSize) {
-      const additionalPassengers = Array.from({ length: Math.max(0, tripData.groupSize - 3) }, (_, i) => ({
-        id: `${4 + i}`,
-        name: `Traveler ${4 + i}`
-      }))
-      setPassengers([...mockPassengers, ...additionalPassengers].slice(0, tripData.groupSize))
-    } else {
-      setPassengers(mockPassengers)
-    }
-  }, [tripData])
+  // Remove passenger assignment logic for now
 
   // Load flights
   useEffect(() => {
@@ -101,13 +69,19 @@ export default function FlightManagement({ tripId, tripData, onFlightsUpdate }: 
   const loadFlights = async () => {
     try {
       setLoading(true)
-      // In real app, this would fetch from database
-      // const client = generateClient() as any
-      // const { data } = await client.models.Flight.list({ filter: { tripId: { eq: tripId } } })
       
-      // Mock data for now
-      const mockFlights: Flight[] = []
-      setFlights(mockFlights)
+      // Fetch flights from DynamoDB using Amplify data client
+      const { data: flightData, errors } = await client.models.Flight.list({
+        filter: { tripId: { eq: tripId } },
+        authMode: 'userPool' // Use authenticated user
+      })
+      
+      if (errors) {
+        console.error('Error loading flights:', errors)
+        return
+      }
+      
+      setFlights(flightData || [])
     } catch (error) {
       console.error('Error loading flights:', error)
     } finally {
@@ -122,7 +96,7 @@ export default function FlightManagement({ tripId, tripData, onFlightsUpdate }: 
     try {
       const flightInfo = await lookupFlight(
         flightForm.flightNumber,
-        flightForm.arrivalDateTime || new Date().toISOString().split('T')[0]
+        flightForm.departureTime || new Date().toISOString().split('T')[0]
       )
       
       if (flightInfo) {
@@ -142,51 +116,74 @@ export default function FlightManagement({ tripId, tripData, onFlightsUpdate }: 
 
   const handleSaveFlight = async () => {
     try {
-      const client = generateClient() as any
-      
       // Validate required fields
-      if (!flightForm.airline || !flightForm.arrivalDateTime || 
-          !flightForm.departureAirport || !flightForm.arrivalAirport || !flightForm.travelerName) {
+      if (!flightForm.airline || !flightForm.departureTime || !flightForm.arrivalTime || 
+          !flightForm.departureAirport || !flightForm.arrivalAirport) {
         alert('Please fill in all required fields')
         return
       }
 
+      // Prepare flight data for GraphQL
       const flightData = {
-        ...flightForm,
         tripId,
-        userId: 'current-user-id', // Would get from auth context
-        departureAirport: flightForm.departureAirport.toUpperCase(),
-        arrivalAirport: flightForm.arrivalAirport.toUpperCase(),
-        flightNumber: flightForm.flightNumber?.toUpperCase(),
-        status: 'scheduled'
+        airline: flightForm.airline,
+        flightNumber: flightForm.flightNumber.toUpperCase() || `${flightForm.airline.substring(0,2).toUpperCase()}${Date.now().toString().slice(-4)}`,
+        departureAirport: JSON.stringify({
+          code: flightForm.departureAirport.toUpperCase(),
+          name: `${flightForm.departureAirport.toUpperCase()} Airport`,
+          city: 'Unknown'
+        }),
+        arrivalAirport: JSON.stringify({
+          code: flightForm.arrivalAirport.toUpperCase(), 
+          name: `${flightForm.arrivalAirport.toUpperCase()} Airport`,
+          city: 'Unknown'
+        }),
+        departureTime: flightForm.departureTime,
+        arrivalTime: flightForm.arrivalTime,
+        terminal: flightForm.terminal,
+        gate: flightForm.gate,
+        confirmationCode: flightForm.confirmationCode,
+        notes: flightForm.notes,
+        direction: flightForm.direction,
+        addedByUserName: flightForm.addedByUserName
       }
 
       if (editingFlight) {
         // Update existing flight
-        const updatedFlight = { ...flightData, id: editingFlight }
-        setFlights(prev => prev.map(f => f.id === editingFlight ? updatedFlight : f))
+        const { data: updatedFlight, errors } = await client.models.Flight.update({
+          id: editingFlight,
+          ...flightData
+        }, { authMode: 'userPool' })
+        
+        if (errors) {
+          console.error('Error updating flight:', errors)
+          alert('Error updating flight. Please try again.')
+          return
+        }
         
         addActivity({
           type: 'update',
           category: 'flight',
-          action: `Updated flight ${flightData.flightNumber || flightData.airline}`,
-          details: { route: `${flightData.departureAirport} → ${flightData.arrivalAirport}` }
+          action: `Updated flight ${flightData.flightNumber}`,
+          details: { route: `${flightForm.departureAirport} → ${flightForm.arrivalAirport}` }
         })
       } else {
         // Create new flight
-        const newFlight = {
-          ...flightData,
-          id: `flight_${Date.now()}`,
-          createdAt: new Date().toISOString(),
-          updatedAt: new Date().toISOString()
+        const { data: newFlight, errors } = await client.models.Flight.create(flightData, {
+          authMode: 'userPool'
+        })
+        
+        if (errors) {
+          console.error('Error creating flight:', errors)
+          alert('Error creating flight. Please try again.')
+          return
         }
-        setFlights(prev => [...prev, newFlight])
         
         addActivity({
           type: 'create',
           category: 'flight',
-          action: `Added flight ${flightData.flightNumber || flightData.airline}`,
-          details: { route: `${flightData.departureAirport} → ${flightData.arrivalAirport}` }
+          action: `Added flight ${flightData.flightNumber}`,
+          details: { route: `${flightForm.departureAirport} → ${flightForm.arrivalAirport}` }
         })
       }
 
@@ -194,83 +191,111 @@ export default function FlightManagement({ tripId, tripData, onFlightsUpdate }: 
       setFlightForm({
         airline: '',
         flightNumber: '',
-        arrivalDateTime: '',
+        departureTime: '',
+        arrivalTime: '',
         departureAirport: '',
         arrivalAirport: '',
-        travelerName: '',
-        confirmationNumber: '',
-        seatNumber: '',
+        confirmationCode: '',
         terminal: '',
         gate: '',
         notes: '',
-        isGroupFlight: false
+        direction: 'departure',
+        addedByUserName: 'You'
       })
       setIsAddingFlight(false)
       setEditingFlight(null)
+      
+      // Reload flights from database
+      await loadFlights()
       
       if (onFlightsUpdate) {
         onFlightsUpdate(flights)
       }
     } catch (error) {
       console.error('Error saving flight:', error)
+      alert('Error saving flight. Please try again.')
     }
   }
 
   const handleDeleteFlight = async (flightId: string) => {
     try {
       const flight = flights.find(f => f.id === flightId)
-      setFlights(prev => prev.filter(f => f.id !== flightId))
+      
+      // Delete from DynamoDB
+      const { errors } = await client.models.Flight.delete({
+        id: flightId
+      }, { authMode: 'userPool' })
+      
+      if (errors) {
+        console.error('Error deleting flight:', errors)
+        alert('Error deleting flight. Please try again.')
+        return
+      }
       
       if (flight) {
         addActivity({
           type: 'delete',
           category: 'flight',
           action: `Deleted flight ${flight.flightNumber || flight.airline}`,
-          details: { route: `${flight.departureAirport} → ${flight.arrivalAirport}` }
+          details: { 
+            route: `${JSON.parse(flight.departureAirport as string).code} → ${JSON.parse(flight.arrivalAirport as string).code}`
+          }
         })
       }
+      
+      // Reload flights from database
+      await loadFlights()
       
       if (onFlightsUpdate) {
         onFlightsUpdate(flights.filter(f => f.id !== flightId))
       }
     } catch (error) {
       console.error('Error deleting flight:', error)
+      alert('Error deleting flight. Please try again.')
     }
   }
 
   const handleEditFlight = (flight: Flight) => {
+    // Parse airport JSON data
+    const departureAirport = JSON.parse(flight.departureAirport as string)
+    const arrivalAirport = JSON.parse(flight.arrivalAirport as string)
+    
     setFlightForm({
       airline: flight.airline,
       flightNumber: flight.flightNumber || '',
-      arrivalDateTime: flight.arrivalDateTime,
-      departureAirport: flight.departureAirport,
-      arrivalAirport: flight.arrivalAirport,
-      travelerName: flight.travelerName,
-      confirmationNumber: flight.confirmationNumber || '',
-      seatNumber: flight.seatNumber || '',
+      departureTime: flight.departureTime,
+      arrivalTime: flight.arrivalTime,
+      departureAirport: departureAirport.code,
+      arrivalAirport: arrivalAirport.code,
+      confirmationCode: flight.confirmationCode || '',
       terminal: flight.terminal || '',
       gate: flight.gate || '',
       notes: flight.notes || '',
-      isGroupFlight: flight.isGroupFlight || false
+      direction: flight.direction || 'departure',
+      addedByUserName: flight.addedByUserName || 'You'
     })
     setEditingFlight(flight.id)
     setIsAddingFlight(true)
   }
 
-  const handleAssignPassenger = (flight: Flight, passenger: Passenger) => {
-    const updatedFlight = {
-      ...flight,
-      guestUserIds: [...(flight.guestUserIds || []), passenger.id]
-    }
-    setFlights(prev => prev.map(f => f.id === flight.id ? updatedFlight : f))
-    setSelectedFlight(null)
-  }
+  // Passenger assignment removed for now
 
   const formatDateTime = (dateTime: string) => {
     const date = new Date(dateTime)
     return {
       date: date.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }),
       time: date.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', hour12: true })
+    }
+  }
+
+  const parseAirportData = (airportJson: string | unknown) => {
+    try {
+      if (typeof airportJson === 'string') {
+        return JSON.parse(airportJson)
+      }
+      return airportJson
+    } catch {
+      return { code: 'UNK', name: 'Unknown Airport', city: 'Unknown' }
     }
   }
 
@@ -296,7 +321,7 @@ export default function FlightManagement({ tripId, tripData, onFlightsUpdate }: 
 
       {/* Add/Edit Flight Form */}
       {isAddingFlight && (
-        <div className="bg-white dark:bg-gray-800 rounded-2xl p-6 shadow-xl border border-gray-200 dark:border-gray-700">
+        <div className="bg-white dark:bg-gray-900 rounded-2xl p-6 shadow-xl border border-gray-200 dark:border-gray-600">
           <h3 className="text-lg font-bold mb-4 flex items-center gap-2">
             <span>✈️</span>
             {editingFlight ? 'Edit Flight' : 'Add New Flight'}
@@ -312,7 +337,7 @@ export default function FlightManagement({ tripId, tripData, onFlightsUpdate }: 
                   placeholder="e.g., AA1234"
                   value={flightForm.flightNumber}
                   onChange={(e) => setFlightForm({ ...flightForm, flightNumber: e.target.value })}
-                  className="flex-1 px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-xl bg-white dark:bg-gray-700 focus:outline-none focus:border-blue-500"
+                  className="flex-1 px-4 py-2 border border-gray-300 dark:border-gray-500 rounded-xl bg-white dark:bg-gray-800 text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400 focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500"
                 />
                 <button
                   onClick={handleFlightLookup}
@@ -332,25 +357,21 @@ export default function FlightManagement({ tripId, tripData, onFlightsUpdate }: 
                 placeholder="e.g., American Airlines"
                 value={flightForm.airline}
                 onChange={(e) => setFlightForm({ ...flightForm, airline: e.target.value })}
-                className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-xl bg-white dark:bg-gray-700 focus:outline-none focus:border-blue-500"
+                className="w-full px-4 py-2 border border-gray-300 dark:border-gray-500 rounded-xl bg-white dark:bg-gray-800 text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400 focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500"
                 required
               />
             </div>
 
-            {/* Traveler Name */}
+            {/* Added By Name */}
             <div>
-              <label className="block text-sm font-medium mb-1">Traveler Name *</label>
-              <select
-                value={flightForm.travelerName}
-                onChange={(e) => setFlightForm({ ...flightForm, travelerName: e.target.value })}
-                className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-xl bg-white dark:bg-gray-700 focus:outline-none focus:border-blue-500"
+              <label className="block text-sm font-medium mb-1">Added By *</label>
+              <input
+                type="text"
+                value={flightForm.addedByUserName}
+                onChange={(e) => setFlightForm({ ...flightForm, addedByUserName: e.target.value })}
+                className="w-full px-4 py-2 border border-gray-300 dark:border-gray-500 rounded-xl bg-white dark:bg-gray-800 text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400 focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500"
                 required
-              >
-                <option value="">Select traveler</option>
-                {passengers.map(p => (
-                  <option key={p.id} value={p.name}>{p.name}</option>
-                ))}
-              </select>
+              />
             </div>
 
             {/* Departure Airport */}
@@ -362,7 +383,7 @@ export default function FlightManagement({ tripId, tripData, onFlightsUpdate }: 
                 value={flightForm.departureAirport}
                 onChange={(e) => setFlightForm({ ...flightForm, departureAirport: e.target.value.toUpperCase() })}
                 maxLength={3}
-                className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-xl bg-white dark:bg-gray-700 focus:outline-none focus:border-blue-500 uppercase"
+                className="w-full px-4 py-2 border border-gray-300 dark:border-gray-500 rounded-xl bg-white dark:bg-gray-800 text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400 focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 uppercase"
                 required
               />
             </div>
@@ -376,7 +397,19 @@ export default function FlightManagement({ tripId, tripData, onFlightsUpdate }: 
                 value={flightForm.arrivalAirport}
                 onChange={(e) => setFlightForm({ ...flightForm, arrivalAirport: e.target.value.toUpperCase() })}
                 maxLength={3}
-                className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-xl bg-white dark:bg-gray-700 focus:outline-none focus:border-blue-500 uppercase"
+                className="w-full px-4 py-2 border border-gray-300 dark:border-gray-500 rounded-xl bg-white dark:bg-gray-800 text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400 focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 uppercase"
+                required
+              />
+            </div>
+
+            {/* Departure Date/Time */}
+            <div>
+              <label className="block text-sm font-medium mb-1">Departure Date & Time *</label>
+              <input
+                type="datetime-local"
+                value={flightForm.departureTime}
+                onChange={(e) => setFlightForm({ ...flightForm, departureTime: e.target.value })}
+                className="w-full px-4 py-2 border border-gray-300 dark:border-gray-500 rounded-xl bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500"
                 required
               />
             </div>
@@ -386,9 +419,9 @@ export default function FlightManagement({ tripId, tripData, onFlightsUpdate }: 
               <label className="block text-sm font-medium mb-1">Arrival Date & Time *</label>
               <input
                 type="datetime-local"
-                value={flightForm.arrivalDateTime}
-                onChange={(e) => setFlightForm({ ...flightForm, arrivalDateTime: e.target.value })}
-                className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-xl bg-white dark:bg-gray-700 focus:outline-none focus:border-blue-500"
+                value={flightForm.arrivalTime}
+                onChange={(e) => setFlightForm({ ...flightForm, arrivalTime: e.target.value })}
+                className="w-full px-4 py-2 border border-gray-300 dark:border-gray-500 rounded-xl bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500"
                 required
               />
             </div>
@@ -399,9 +432,9 @@ export default function FlightManagement({ tripId, tripData, onFlightsUpdate }: 
               <input
                 type="text"
                 placeholder="e.g., ABC123"
-                value={flightForm.confirmationNumber}
-                onChange={(e) => setFlightForm({ ...flightForm, confirmationNumber: e.target.value })}
-                className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-xl bg-white dark:bg-gray-700 focus:outline-none focus:border-blue-500"
+                value={flightForm.confirmationCode}
+                onChange={(e) => setFlightForm({ ...flightForm, confirmationCode: e.target.value })}
+                className="w-full px-4 py-2 border border-gray-300 dark:border-gray-500 rounded-xl bg-white dark:bg-gray-800 text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400 focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500"
               />
             </div>
 
@@ -413,7 +446,7 @@ export default function FlightManagement({ tripId, tripData, onFlightsUpdate }: 
                 placeholder="e.g., Terminal 2"
                 value={flightForm.terminal}
                 onChange={(e) => setFlightForm({ ...flightForm, terminal: e.target.value })}
-                className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-xl bg-white dark:bg-gray-700 focus:outline-none focus:border-blue-500"
+                className="w-full px-4 py-2 border border-gray-300 dark:border-gray-500 rounded-xl bg-white dark:bg-gray-800 text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400 focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500"
               />
             </div>
 
@@ -425,35 +458,25 @@ export default function FlightManagement({ tripId, tripData, onFlightsUpdate }: 
                 placeholder="e.g., B14"
                 value={flightForm.gate}
                 onChange={(e) => setFlightForm({ ...flightForm, gate: e.target.value })}
-                className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-xl bg-white dark:bg-gray-700 focus:outline-none focus:border-blue-500"
+                className="w-full px-4 py-2 border border-gray-300 dark:border-gray-500 rounded-xl bg-white dark:bg-gray-800 text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400 focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500"
               />
             </div>
 
-            {/* Seat Number */}
+            {/* Direction */}
             <div>
-              <label className="block text-sm font-medium mb-1">Seat Number</label>
-              <input
-                type="text"
-                placeholder="e.g., 12A"
-                value={flightForm.seatNumber}
-                onChange={(e) => setFlightForm({ ...flightForm, seatNumber: e.target.value })}
-                className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-xl bg-white dark:bg-gray-700 focus:outline-none focus:border-blue-500"
-              />
+              <label className="block text-sm font-medium mb-1">Direction</label>
+              <select
+                value={flightForm.direction}
+                onChange={(e) => setFlightForm({ ...flightForm, direction: e.target.value as 'arrival' | 'departure' })}
+                className="w-full px-4 py-2 border border-gray-300 dark:border-gray-500 rounded-xl bg-white dark:bg-gray-800 text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400 focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500"
+              >
+                <option value="departure">Departure</option>
+                <option value="arrival">Arrival</option>
+              </select>
             </div>
 
-            {/* Group Flight Toggle */}
-            <div className="flex items-center gap-2">
-              <input
-                type="checkbox"
-                id="groupFlight"
-                checked={flightForm.isGroupFlight}
-                onChange={(e) => setFlightForm({ ...flightForm, isGroupFlight: e.target.checked })}
-                className="w-4 h-4 text-blue-600 rounded focus:ring-blue-500"
-              />
-              <label htmlFor="groupFlight" className="text-sm font-medium">
-                Multiple travelers on this flight
-              </label>
-            </div>
+            {/* Empty div to maintain grid layout */}
+            <div></div>
 
             {/* Notes */}
             <div className="md:col-span-2">
@@ -463,7 +486,7 @@ export default function FlightManagement({ tripId, tripData, onFlightsUpdate }: 
                 value={flightForm.notes}
                 onChange={(e) => setFlightForm({ ...flightForm, notes: e.target.value })}
                 rows={3}
-                className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-xl bg-white dark:bg-gray-700 focus:outline-none focus:border-blue-500"
+                className="w-full px-4 py-2 border border-gray-300 dark:border-gray-500 rounded-xl bg-white dark:bg-gray-800 text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400 focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500"
               />
             </div>
           </div>
@@ -483,16 +506,16 @@ export default function FlightManagement({ tripId, tripData, onFlightsUpdate }: 
                 setFlightForm({
                   airline: '',
                   flightNumber: '',
-                  arrivalDateTime: '',
+                  departureTime: '',
+                  arrivalTime: '',
                   departureAirport: '',
                   arrivalAirport: '',
-                  travelerName: '',
-                  confirmationNumber: '',
-                  seatNumber: '',
+                  confirmationCode: '',
                   terminal: '',
                   gate: '',
                   notes: '',
-                  isGroupFlight: false
+                  direction: 'departure',
+                  addedByUserName: 'You'
                 })
               }}
               className="px-6 py-2 bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300 rounded-xl font-semibold hover:bg-gray-300 dark:hover:bg-gray-600 transition-colors"
@@ -524,7 +547,11 @@ export default function FlightManagement({ tripId, tripData, onFlightsUpdate }: 
       ) : (
         <div className="space-y-4">
           {flights.map((flight) => {
-            const dateTime = formatDateTime(flight.arrivalDateTime)
+            const departureAirport = parseAirportData(flight.departureAirport)
+            const arrivalAirport = parseAirportData(flight.arrivalAirport)
+            const departureDateTime = formatDateTime(flight.departureTime)
+            const arrivalDateTime = formatDateTime(flight.arrivalTime)
+            
             return (
               <div
                 key={flight.id}
@@ -543,17 +570,19 @@ export default function FlightManagement({ tripId, tripData, onFlightsUpdate }: 
                           {flight.airline}
                         </p>
                       </div>
-                      {flight.isGroupFlight && (
-                        <span className="px-2 py-1 bg-purple-100 dark:bg-purple-900/30 text-purple-700 dark:text-purple-300 rounded-full text-xs font-semibold">
-                          Group Flight
-                        </span>
-                      )}
+                      <span className={`px-2 py-1 rounded-full text-xs font-semibold ${
+                        flight.direction === 'departure' 
+                          ? 'bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300'
+                          : 'bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-300'
+                      }`}>
+                        {flight.direction === 'departure' ? 'Departure' : 'Arrival'}
+                      </span>
                     </div>
 
                     {/* Route */}
                     <div className="flex items-center gap-4 mb-3">
                       <div className="text-center">
-                        <p className="text-2xl font-bold">{flight.departureAirport}</p>
+                        <p className="text-2xl font-bold">{departureAirport.code}</p>
                         <p className="text-xs text-gray-500">Departure</p>
                       </div>
                       <div className="flex-1 flex items-center">
@@ -562,32 +591,33 @@ export default function FlightManagement({ tripId, tripData, onFlightsUpdate }: 
                         <div className="flex-1 h-[2px] bg-gradient-to-r from-purple-400 to-pink-400"></div>
                       </div>
                       <div className="text-center">
-                        <p className="text-2xl font-bold">{flight.arrivalAirport}</p>
+                        <p className="text-2xl font-bold">{arrivalAirport.code}</p>
                         <p className="text-xs text-gray-500">Arrival</p>
                       </div>
                     </div>
 
                     {/* Date & Time */}
-                    <div className="flex items-center gap-2 mb-3 text-sm">
-                      <span>📅</span>
-                      <span className="font-semibold">{dateTime.date}</span>
-                      <span className="text-gray-400">•</span>
-                      <span>🕐</span>
-                      <span>{dateTime.time}</span>
+                    <div className="grid grid-cols-2 gap-4 mb-3 text-sm">
+                      <div className="flex items-center gap-2">
+                        <span>🛫</span>
+                        <span className="font-semibold">{departureDateTime.date}</span>
+                        <span>•</span>
+                        <span>{departureDateTime.time}</span>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <span>🛬</span>
+                        <span className="font-semibold">{arrivalDateTime.date}</span>
+                        <span>•</span>
+                        <span>{arrivalDateTime.time}</span>
+                      </div>
                     </div>
 
                     {/* Details Grid */}
                     <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-3">
                       <div className="bg-gray-50 dark:bg-gray-700/50 rounded-lg p-2">
-                        <p className="text-xs text-gray-500 dark:text-gray-400">Traveler</p>
-                        <p className="font-semibold text-sm">{flight.travelerName}</p>
+                        <p className="text-xs text-gray-500 dark:text-gray-400">Added By</p>
+                        <p className="font-semibold text-sm">{flight.addedByUserName || 'Unknown'}</p>
                       </div>
-                      {flight.seatNumber && (
-                        <div className="bg-gray-50 dark:bg-gray-700/50 rounded-lg p-2">
-                          <p className="text-xs text-gray-500 dark:text-gray-400">Seat</p>
-                          <p className="font-semibold text-sm">{flight.seatNumber}</p>
-                        </div>
-                      )}
                       {flight.terminal && (
                         <div className="bg-gray-50 dark:bg-gray-700/50 rounded-lg p-2">
                           <p className="text-xs text-gray-500 dark:text-gray-400">Terminal</p>
@@ -600,10 +630,10 @@ export default function FlightManagement({ tripId, tripData, onFlightsUpdate }: 
                           <p className="font-semibold text-sm">{flight.gate}</p>
                         </div>
                       )}
-                      {flight.confirmationNumber && (
+                      {flight.confirmationCode && (
                         <div className="bg-gray-50 dark:bg-gray-700/50 rounded-lg p-2">
                           <p className="text-xs text-gray-500 dark:text-gray-400">Confirmation</p>
-                          <p className="font-semibold text-sm">{flight.confirmationNumber}</p>
+                          <p className="font-semibold text-sm">{flight.confirmationCode}</p>
                         </div>
                       )}
                     </div>
@@ -617,31 +647,7 @@ export default function FlightManagement({ tripId, tripData, onFlightsUpdate }: 
                       </div>
                     )}
 
-                    {/* Assigned Passengers */}
-                    {flight.isGroupFlight && (
-                      <div className="mt-3">
-                        <p className="text-sm font-semibold mb-2">Passengers on this flight:</p>
-                        <div className="flex flex-wrap gap-2">
-                          <span className="px-3 py-1 bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-300 rounded-full text-sm">
-                            {flight.travelerName} {flight.seatNumber && `(${flight.seatNumber})`}
-                          </span>
-                          {flight.guestUserIds?.map(id => {
-                            const passenger = passengers.find(p => p.id === id)
-                            return passenger ? (
-                              <span key={id} className="px-3 py-1 bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300 rounded-full text-sm">
-                                {passenger.name} {passenger.seatNumber && `(${passenger.seatNumber})`}
-                              </span>
-                            ) : null
-                          })}
-                          <button
-                            onClick={() => setSelectedFlight(flight)}
-                            className="px-3 py-1 bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300 rounded-full text-sm hover:bg-gray-300 dark:hover:bg-gray-600 transition-colors"
-                          >
-                            + Add Passenger
-                          </button>
-                        </div>
-                      </div>
-                    )}
+                    {/* Flight info complete */}
                   </div>
 
                   {/* Actions */}
@@ -672,41 +678,7 @@ export default function FlightManagement({ tripId, tripData, onFlightsUpdate }: 
         </div>
       )}
 
-      {/* Passenger Assignment Modal */}
-      {selectedFlight && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white dark:bg-gray-800 rounded-2xl p-6 max-w-md w-full">
-            <h3 className="text-lg font-bold mb-4">Add Passenger to Flight</h3>
-            <p className="text-sm text-gray-600 dark:text-gray-400 mb-4">
-              Select a traveler to add to {selectedFlight.flightNumber || 'this flight'}
-            </p>
-            
-            <div className="space-y-2 mb-4">
-              {passengers
-                .filter(p => !selectedFlight.guestUserIds?.includes(p.id) && p.name !== selectedFlight.travelerName)
-                .map(passenger => (
-                  <button
-                    key={passenger.id}
-                    onClick={() => {
-                      handleAssignPassenger(selectedFlight, passenger)
-                    }}
-                    className="w-full p-3 bg-gray-50 dark:bg-gray-700 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-600 transition-colors text-left"
-                  >
-                    <p className="font-semibold">{passenger.name}</p>
-                    {passenger.email && <p className="text-sm text-gray-500">{passenger.email}</p>}
-                  </button>
-                ))}
-            </div>
-
-            <button
-              onClick={() => setSelectedFlight(null)}
-              className="w-full px-4 py-2 bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300 rounded-xl font-semibold hover:bg-gray-300 dark:hover:bg-gray-600 transition-colors"
-            >
-              Cancel
-            </button>
-          </div>
-        </div>
-      )}
+      {/* Passenger assignment modal removed */}
     </div>
   )
 }

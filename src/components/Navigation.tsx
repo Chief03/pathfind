@@ -4,7 +4,11 @@ import { useState } from 'react'
 import { useAuthenticator } from '@aws-amplify/ui-react'
 import { signOut } from 'aws-amplify/auth'
 
-export default function Navigation() {
+interface NavigationProps {
+  onViewMyTrips?: () => void
+}
+
+export default function Navigation({ onViewMyTrips }: NavigationProps) {
   const { user } = useAuthenticator((context) => [context.user])
   const [isDropdownOpen, setIsDropdownOpen] = useState(false)
 
@@ -61,7 +65,10 @@ export default function Navigation() {
                         {user.username || user.signInDetails?.loginId}
                       </div>
                       <button
-                        onClick={() => console.log('My Trips')}
+                        onClick={() => {
+                          onViewMyTrips?.()
+                          setIsDropdownOpen(false)
+                        }}
                         className="block w-full text-left px-4 py-2 text-sm hover:bg-gray-100"
                       >
                         My Trips

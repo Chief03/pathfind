@@ -47,7 +47,7 @@ function generateTripCode(): string {
 }
 
 /**
- * Creates a new trip with validated destinations
+ * Creates a new trip with validated destinations and trip limit checking
  */
 export const handler: Handler = async (event: any) => {
   const { 
@@ -61,6 +61,35 @@ export const handler: Handler = async (event: any) => {
   } = event.arguments;
 
   try {
+    // Get the authenticated user's ID from the event context
+    const userId = event.identity?.sub;
+    if (!userId) {
+      throw new Error('User not authenticated');
+    }
+
+    // Check user's current trip count and subscription limits
+    const { data: userProfile } = await client.models.UserProfile.get({
+      userId: userId
+    });
+
+    if (userProfile) {
+      const currentTripCount = userProfile.tripCount || 0;
+      const maxTrips = userProfile.maxTrips || 5;
+      const subscriptionType = userProfile.subscriptionType || 'free';
+
+      // Check if user has reached their trip limit
+      if (currentTripCount >= maxTrips) {
+        const error = {
+          __typename: 'TripLimitError',
+          message: `You have reached the maximum number of trips (${maxTrips}) for your ${subscriptionType} account. Please delete an existing trip or upgrade to premium to create more trips.`,
+          currentCount: currentTripCount,
+          maxTrips: maxTrips,
+          subscriptionType: subscriptionType,
+          requiresUpgrade: subscriptionType === 'free'
+        };
+        throw error;
+      }
+    }
     // First, validate destinations using our validation function
     const destinationValidations = [];
     
@@ -100,6 +129,23 @@ export const handler: Handler = async (event: any) => {
     if (errors) {
       console.error('Error creating trip:', errors);
       throw new Error('Failed to create trip');
+    }
+
+    // Update user's trip count after successful creation
+    if (userProfile) {
+      await client.models.UserProfile.update({
+        userId: userId,
+        tripCount: (userProfile.tripCount || 0) + 1
+      });
+    } else {
+      // Create user profile if it doesn't exist
+      await client.models.UserProfile.create({
+        userId: userId,
+        email: '', // This should be populated elsewhere
+        firstName: '',
+        lastName: '',
+        tripCount: 1
+      });
     }
 
     return {

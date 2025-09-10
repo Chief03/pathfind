@@ -4,6 +4,7 @@ import { useState } from 'react'
 import { useAuthenticator, Authenticator } from '@aws-amplify/ui-react'
 import { generateClient } from 'aws-amplify/data'
 import DatePicker from './DatePicker'
+import SubscriptionUpgradeModal from './SubscriptionUpgradeModal'
 
 interface HeroSectionProps {
   onTripCreated: (trip: any) => void
@@ -94,6 +95,12 @@ export default function HeroSection({ onTripCreated }: HeroSectionProps) {
   const [showJoinModal, setShowJoinModal] = useState(false)
   const [shareCode, setShareCode] = useState('')
   const [joinError, setJoinError] = useState('')
+  const [customCode, setCustomCode] = useState('')
+  const [codeAvailable, setCodeAvailable] = useState<boolean | null>(null)
+  const [checkingCode, setCheckingCode] = useState(false)
+  const [useCustomCode, setUseCustomCode] = useState(false)
+  const [showUpgradeModal, setShowUpgradeModal] = useState(false)
+  const [tripLimitError, setTripLimitError] = useState<any>(null)
   const [formData, setFormData] = useState({
     tripName: '',
     destination: '',
@@ -113,9 +120,25 @@ export default function HeroSection({ onTripCreated }: HeroSectionProps) {
       return
     }
 
+    // Validate custom code if using one
+    if (useCustomCode && (!customCode || customCode.length < 4)) {
+      alert('Trip code must be at least 4 characters')
+      return
+    }
+
+    if (useCustomCode && codeAvailable === false) {
+      alert('This trip code is already taken. Please choose another.')
+      return
+    }
+
     try {
       // Create client after user is authenticated
       const client = generateClient()
+      
+      // Use custom code or generate one
+      const tripCode = useCustomCode && customCode ? 
+        customCode.toLowerCase().replace(/\s+/g, '-') : 
+        generateShareCode()
       
       // Create trip using Amplify Data
       const { data: newTrip } = await (client as any).models.Trip.create({
@@ -125,14 +148,24 @@ export default function HeroSection({ onTripCreated }: HeroSectionProps) {
         startDate: formData.startDate,
         endDate: formData.endDate,
         groupSize: formData.groupSize,
-        shareCode: generateShareCode(),
+        shareCode: tripCode,
       })
 
       if (newTrip) {
         onTripCreated(newTrip)
       }
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error creating trip:', error)
+      
+      // Check if it's a trip limit error
+      if (error?.__typename === 'TripLimitError' || error?.message?.includes('maximum number of trips')) {
+        setTripLimitError(error)
+        setShowUpgradeModal(true)
+      } else if (error?.message?.includes('shareCode')) {
+        alert('This trip code is already in use. Please choose another.')
+      } else {
+        alert('Failed to create trip. Please try again.')
+      }
     }
   }
 
@@ -145,9 +178,33 @@ export default function HeroSection({ onTripCreated }: HeroSectionProps) {
     return code
   }
 
+  const checkCodeAvailability = async (code: string) => {
+    if (!code || code.length < 4) {
+      setCodeAvailable(null)
+      return
+    }
+
+    setCheckingCode(true)
+    try {
+      const client = generateClient()
+      const normalizedCode = code.toLowerCase().replace(/\s+/g, '-')
+      
+      // Query for existing trips with this code
+      const { data: existingTrips } = await (client as any).models.Trip.list({
+        filter: { shareCode: { eq: normalizedCode } }
+      })
+      
+      setCodeAvailable(!existingTrips || existingTrips.length === 0)
+    } catch (error) {
+      console.error('Error checking code:', error)
+    } finally {
+      setCheckingCode(false)
+    }
+  }
+
   const handleJoinTrip = async () => {
     if (!shareCode.trim()) {
-      setJoinError('Please enter a share code')
+      setJoinError('Please enter a trip code')
       return
     }
 
@@ -159,16 +216,30 @@ export default function HeroSection({ onTripCreated }: HeroSectionProps) {
     try {
       const client = generateClient()
       
-      // Find trip by share code
+      // Normalize the code (lowercase, replace spaces with hyphens)
+      const normalizedCode = shareCode.toLowerCase().trim().replace(/\s+/g, '-')
+      
+      // Find trip by share code (try both normalized and uppercase for backward compatibility)
       const { data: trips } = await (client as any).models.Trip.list({
-        filter: { shareCode: { eq: shareCode.toUpperCase() } }
+        filter: { shareCode: { eq: normalizedCode } }
       })
+      
+      // If not found with normalized, try uppercase (for old trips)
+      let foundTrips = trips
+      if (!trips || trips.length === 0) {
+        const { data: upperTrips } = await (client as any).models.Trip.list({
+          filter: { shareCode: { eq: shareCode.toUpperCase() } }
+        })
+        foundTrips = upperTrips
+      }
 
-      if (trips && trips.length > 0) {
-        onTripCreated(trips[0])
+      if (foundTrips && foundTrips.length > 0) {
+        onTripCreated(foundTrips[0])
         setShowJoinModal(false)
+        setShareCode('')
+        setJoinError('')
       } else {
-        setJoinError('Invalid share code. Please check and try again.')
+        setJoinError('Trip not found. Please check the code and try again.')
       }
     } catch (error) {
       console.error('Error joining trip:', error)
@@ -252,6 +323,33 @@ export default function HeroSection({ onTripCreated }: HeroSectionProps) {
                   </svg>
                   <span className="text-white/90">AI-powered</span>
                 </div>
+              </div>
+
+              {/* Join Trip Section - Prominent on Homepage */}
+              <div className="bg-white/10 backdrop-blur-md rounded-2xl p-6 border border-white/20 mb-8">
+                <h3 className="text-white font-semibold mb-3 flex items-center gap-2">
+                  <span className="text-2xl">🎫</span>
+                  Have a Trip Code? Join Instantly!
+                </h3>
+                <div className="flex gap-3">
+                  <input
+                    type="text"
+                    value={shareCode}
+                    onChange={(e) => setShareCode(e.target.value)}
+                    onKeyPress={(e) => e.key === 'Enter' && handleJoinTrip()}
+                    placeholder="Enter trip code (e.g. hawaii2025)"
+                    className="flex-1 px-4 py-3 bg-white/90 backdrop-blur rounded-xl text-gray-900 placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-yellow-400"
+                  />
+                  <button
+                    onClick={handleJoinTrip}
+                    className="px-6 py-3 bg-gradient-to-r from-yellow-400 to-orange-500 text-gray-900 font-semibold rounded-xl hover:from-yellow-500 hover:to-orange-600 transition-all transform hover:scale-105 shadow-lg"
+                  >
+                    Join Trip
+                  </button>
+                </div>
+                {joinError && (
+                  <p className="text-red-400 text-sm mt-2">{joinError}</p>
+                )}
               </div>
 
               {/* Quick Destination Cards */}
@@ -343,7 +441,7 @@ export default function HeroSection({ onTripCreated }: HeroSectionProps) {
                   </div>
                 </div>
 
-                <div className="mb-6">
+                <div className="mb-5">
                   <label className="block text-sm font-medium text-gray-700 mb-2">
                     Group Size
                   </label>
@@ -369,6 +467,74 @@ export default function HeroSection({ onTripCreated }: HeroSectionProps) {
                   <p className="text-xs text-gray-500 mt-2">
                     {formData.groupSize === 1 ? 'Solo adventure' : `${formData.groupSize} travelers`}
                   </p>
+                </div>
+
+                {/* Custom Trip Code Section */}
+                <div className="mb-6">
+                  <div className="flex items-center justify-between mb-2">
+                    <label className="block text-sm font-medium text-gray-700">
+                      Trip Code (Optional)
+                    </label>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setUseCustomCode(!useCustomCode)
+                        setCustomCode('')
+                        setCodeAvailable(null)
+                      }}
+                      className="text-sm text-purple-600 hover:text-purple-700 font-medium"
+                    >
+                      {useCustomCode ? 'Use Auto-Generated' : 'Choose My Own'}
+                    </button>
+                  </div>
+                  
+                  {useCustomCode ? (
+                    <div>
+                      <input
+                        type="text"
+                        value={customCode}
+                        onChange={(e) => {
+                          const code = e.target.value.toLowerCase().replace(/[^a-z0-9-]/g, '')
+                          setCustomCode(code)
+                          if (code.length >= 4) {
+                            checkCodeAvailability(code)
+                          } else {
+                            setCodeAvailable(null)
+                          }
+                        }}
+                        placeholder="e.g. hawaii2025, johns-bachelor"
+                        className={`w-full px-4 py-3 border rounded-xl focus:outline-none focus:ring-2 focus:ring-purple-500 transition-all ${
+                          codeAvailable === false ? 'border-red-400 bg-red-50' : 
+                          codeAvailable === true ? 'border-green-400 bg-green-50' : 
+                          'border-gray-200'
+                        }`}
+                        maxLength={30}
+                      />
+                      <div className="mt-2 text-xs">
+                        {checkingCode && (
+                          <span className="text-gray-500">Checking availability...</span>
+                        )}
+                        {!checkingCode && codeAvailable === true && customCode.length >= 4 && (
+                          <span className="text-green-600">✓ This code is available!</span>
+                        )}
+                        {!checkingCode && codeAvailable === false && (
+                          <span className="text-red-600">✗ This code is already taken</span>
+                        )}
+                        {customCode.length > 0 && customCode.length < 4 && (
+                          <span className="text-gray-500">Code must be at least 4 characters</span>
+                        )}
+                      </div>
+                      <p className="text-xs text-gray-500 mt-1">
+                        Choose a memorable code that friends can easily type
+                      </p>
+                    </div>
+                  ) : (
+                    <div className="bg-gray-50 px-4 py-3 rounded-xl">
+                      <p className="text-sm text-gray-600">
+                        A unique code will be generated automatically
+                      </p>
+                    </div>
+                  )}
                 </div>
 
                 <button 
@@ -617,6 +783,20 @@ export default function HeroSection({ onTripCreated }: HeroSectionProps) {
             </Authenticator>
           </div>
         </div>
+      )}
+
+      {/* Subscription Upgrade Modal */}
+      {showUpgradeModal && tripLimitError && (
+        <SubscriptionUpgradeModal
+          isOpen={showUpgradeModal}
+          onClose={() => {
+            setShowUpgradeModal(false)
+            setTripLimitError(null)
+          }}
+          currentCount={tripLimitError.currentCount || 5}
+          maxTrips={tripLimitError.maxTrips || 5}
+          subscriptionType={tripLimitError.subscriptionType || 'free'}
+        />
       )}
     </>
   )

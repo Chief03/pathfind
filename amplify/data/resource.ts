@@ -1,5 +1,6 @@
 import { type ClientSchema, a, defineData } from '@aws-amplify/backend';
 import { fetchEventsFunction } from '../functions/fetch-events/resource.js';
+import { deleteTripFunction } from '../functions/delete-trip/resource.js';
 
 /*========== The application schema ==========*/
 const schema = a.schema({
@@ -19,6 +20,9 @@ const schema = a.schema({
       createdAt: a.datetime(),
       lastLoginAt: a.datetime(),
       isEmailVerified: a.boolean().default(false),
+      subscriptionType: a.enum(['free', 'premium']).default('free'),
+      tripCount: a.integer().default(0),
+      maxTrips: a.integer().default(5),
     })
     .authorization(allow => [
       allow.ownerDefinedIn('userId'), // Only the user can access their own profile
@@ -186,6 +190,16 @@ const schema = a.schema({
     .returns(a.ref('Trip'))
     .authorization(allow => [allow.publicApiKey()])
     .handler(a.handler.function(fetchEventsFunction)),
+
+  // Delete trip with count update
+  deleteTrip: a
+    .mutation()
+    .arguments({
+      tripId: a.string().required(),
+    })
+    .returns(a.boolean())
+    .authorization(allow => [allow.authenticated()])
+    .handler(a.handler.function(deleteTripFunction)),
 });
 
 export type Schema = ClientSchema<typeof schema>;

@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react'
 import { useAuthenticator } from '@aws-amplify/ui-react'
 import { generateClient } from 'aws-amplify/data'
 import type { Schema } from '../../amplify/data/resource'
+import SubscriptionUpgradeModal from './SubscriptionUpgradeModal'
 
 interface MyTripsProps {
   onTripSelected: (trip: any) => void
@@ -14,35 +15,87 @@ export default function MyTrips({ onTripSelected, onBackToHome }: MyTripsProps) 
   const { user } = useAuthenticator((context) => [context.user])
   const [trips, setTrips] = useState<any[]>([])
   const [loading, setLoading] = useState(true)
+  const [userProfile, setUserProfile] = useState<any>(null)
+  const [showUpgradeModal, setShowUpgradeModal] = useState(false)
+  const [deletingTripId, setDeletingTripId] = useState<string | null>(null)
   
   // Initialize Amplify data client
   const client = generateClient<Schema>()
 
   useEffect(() => {
     if (user) {
-      loadUserTrips()
+      loadUserData()
     }
   }, [user])
 
-  const loadUserTrips = async () => {
+  const loadUserData = async () => {
     try {
       setLoading(true)
       
-      // Fetch user's trips from DynamoDB
-      const { data: tripData, errors } = await client.models.Trip.list({
-        authMode: 'userPool' // Use authenticated user
-      })
+      // Load user profile and trips in parallel
+      const [tripsResult, profileResult] = await Promise.all([
+        client.models.Trip.list({
+          authMode: 'userPool'
+        }),
+        client.models.UserProfile.get({
+          userId: user.userId
+        })
+      ])
+      
+      if (tripsResult.errors) {
+        console.error('Error loading trips:', tripsResult.errors)
+      } else {
+        setTrips(tripsResult.data || [])
+      }
+      
+      if (profileResult.data) {
+        setUserProfile(profileResult.data)
+      }
+      
+    } catch (error) {
+      console.error('Error loading user data:', error)
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  const deleteTrip = async (tripId: string, event: React.MouseEvent) => {
+    event.stopPropagation() // Prevent trip selection when clicking delete
+    
+    if (!confirm('Are you sure you want to delete this trip? This action cannot be undone.')) {
+      return
+    }
+
+    try {
+      setDeletingTripId(tripId)
+      
+      // Delete the trip
+      const { errors } = await client.models.Trip.delete({ id: tripId })
       
       if (errors) {
-        console.error('Error loading trips:', errors)
+        console.error('Error deleting trip:', errors)
+        alert('Failed to delete trip. Please try again.')
         return
       }
       
-      setTrips(tripData || [])
+      // Update local state
+      setTrips(trips.filter(trip => trip.id !== tripId))
+      
+      // Update user's trip count
+      if (userProfile) {
+        const newTripCount = Math.max(0, (userProfile.tripCount || 0) - 1)
+        await client.models.UserProfile.update({
+          userId: user.userId,
+          tripCount: newTripCount
+        })
+        setUserProfile({ ...userProfile, tripCount: newTripCount })
+      }
+      
     } catch (error) {
-      console.error('Error loading trips:', error)
+      console.error('Error deleting trip:', error)
+      alert('Failed to delete trip. Please try again.')
     } finally {
-      setLoading(false)
+      setDeletingTripId(null)
     }
   }
 
@@ -96,9 +149,25 @@ export default function MyTrips({ onTripSelected, onBackToHome }: MyTripsProps) 
           <h1 className="text-3xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
             🧳 My Trips
           </h1>
-          <p className="text-gray-600 dark:text-gray-400 mt-2">
-            Manage and view all your trips
-          </p>
+          <div className="flex items-center gap-4 mt-2">
+            <p className="text-gray-600 dark:text-gray-400">
+              Manage and view all your trips
+            </p>
+            {userProfile && (
+              <div className="flex items-center gap-2">
+                <span className={`px-3 py-1 rounded-full text-sm font-semibold ${
+                  userProfile.subscriptionType === 'premium' 
+                    ? 'bg-gradient-to-r from-yellow-400 to-orange-400 text-white' 
+                    : 'bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300'
+                }`}>
+                  {userProfile.subscriptionType === 'premium' ? '⭐ Premium' : '🆓 Free'}
+                </span>
+                <span className="text-sm text-gray-500 dark:text-gray-400">
+                  {trips.length}/{userProfile.maxTrips || 5} trips
+                </span>
+              </div>
+            )}
+          </div>
         </div>
         <button
           onClick={onBackToHome}
@@ -134,20 +203,42 @@ export default function MyTrips({ onTripSelected, onBackToHome }: MyTripsProps) 
             return (
               <div
                 key={trip.id}
-                onClick={() => onTripSelected(trip)}
-                className="bg-white dark:bg-gray-800 rounded-2xl p-6 shadow-lg border border-gray-200 dark:border-gray-700 hover:shadow-xl transition-all cursor-pointer hover:scale-105"
+                className="bg-white dark:bg-gray-800 rounded-2xl p-6 shadow-lg border border-gray-200 dark:border-gray-700 hover:shadow-xl transition-all group"
               >
                 {/* Trip Header */}
                 <div className="flex items-start justify-between mb-4">
-                  <div className="flex-1">
-                    <h3 className="text-lg font-bold mb-1">{trip.name}</h3>
+                  <div 
+                    className="flex-1 cursor-pointer"
+                    onClick={() => onTripSelected(trip)}
+                  >
+                    <h3 className="text-lg font-bold mb-1 group-hover:text-blue-600 transition-colors">{trip.name}</h3>
                     <p className="text-gray-600 dark:text-gray-400 text-sm">
                       📍 {trip.destinationCity}
                     </p>
                   </div>
-                  <span className={`px-2 py-1 rounded-full text-xs font-semibold ${getStatusColor(status)}`}>
-                    {getStatusText(status)}
-                  </span>
+                  <div className="flex items-center gap-2">
+                    <span className={`px-2 py-1 rounded-full text-xs font-semibold ${getStatusColor(status)}`}>
+                      {getStatusText(status)}
+                    </span>
+                    <button
+                      onClick={(e) => deleteTrip(trip.id, e)}
+                      disabled={deletingTripId === trip.id}
+                      className={`p-2 rounded-lg transition-colors ${
+                        deletingTripId === trip.id
+                          ? 'bg-gray-100 text-gray-400 cursor-not-allowed'
+                          : 'text-gray-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20'
+                      }`}
+                      title="Delete trip"
+                    >
+                      {deletingTripId === trip.id ? (
+                        <div className="w-4 h-4 border-2 border-gray-300 border-t-transparent rounded-full animate-spin"></div>
+                      ) : (
+                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                        </svg>
+                      )}
+                    </button>
+                  </div>
                 </div>
 
                 {/* Trip Details */}
@@ -180,14 +271,30 @@ export default function MyTrips({ onTripSelected, onBackToHome }: MyTripsProps) 
                   </div>
                 )}
 
-                {/* Action Hint */}
-                <div className="mt-4 flex items-center justify-center text-xs text-gray-500 dark:text-gray-400">
-                  <span>Click to manage trip →</span>
+                {/* Action Buttons */}
+                <div className="mt-4 flex items-center justify-between">
+                  <button
+                    onClick={() => onTripSelected(trip)}
+                    className="flex-1 py-2 px-4 bg-gradient-to-r from-blue-500 to-purple-500 text-white rounded-lg font-semibold hover:scale-105 transition-transform text-sm"
+                  >
+                    Manage Trip →
+                  </button>
                 </div>
               </div>
             )
           })}
         </div>
+      )}
+
+      {/* Subscription Upgrade Modal */}
+      {showUpgradeModal && userProfile && (
+        <SubscriptionUpgradeModal
+          isOpen={showUpgradeModal}
+          onClose={() => setShowUpgradeModal(false)}
+          currentCount={trips.length}
+          maxTrips={userProfile.maxTrips || 5}
+          subscriptionType={userProfile.subscriptionType || 'free'}
+        />
       )}
     </div>
   )

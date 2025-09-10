@@ -14,10 +14,11 @@ PathFind solves the chaos of group travel planning by providing a centralized pl
 - Role-based access (creator, participant, viewer)
 
 ### ✈️ **Flight Management**
-- Integration with airline APIs for real-time flight data
+- **NEW:** Real-time flight data via Amadeus GDS integration
+- **NEW:** Automatic flight lookup - just enter flight number (e.g., "AA123")
+- Auto-populate airline, airports, times, and terminals
 - Track arrival/departure flights for all participants
 - Store personal details (seat numbers, confirmation codes)
-- Automatic flight lookup by flight number
 
 ### 📅 **Itinerary Planning**
 - Day-by-day event scheduling
@@ -43,11 +44,13 @@ PathFind solves the chaos of group travel planning by providing a centralized pl
 - **Styling:** Tailwind CSS
 - **UI Components:** AWS Amplify UI React
 - **State Management:** React Context API
+- **API Integration:** Amadeus GDS for flight data
 
 ### Backend (AWS Amplify Gen 2)
 - **API:** AWS AppSync (GraphQL)
 - **Database:** DynamoDB
 - **Authentication:** AWS Cognito
+- **External APIs:** Amadeus Flight API
 - **Functions:** AWS Lambda
 - **Storage:** Amazon S3
 - **Real-time:** AppSync Subscriptions
@@ -101,7 +104,7 @@ pathfind/
    - Watch for any Cognito UserPool attribute errors
    
    ⚠️ **Important Notes:**
-   - **Current Status:** Sandbox has been deleted due to Cognito UserPool attribute conflicts
+   - Sandbox deployment is currently stable and working
    - If you encounter UserPool attribute errors during updates, you'll need to delete and recreate the sandbox
    - UserPool attributes are immutable after creation - changes require full recreation
    - Use `npm run sandbox:delete` or manual CloudFormation stack deletion if needed
@@ -134,17 +137,30 @@ npm run sandbox:delete # Delete Amplify sandbox
 - **UserProfile** - Extended user information
 
 ### Flight Service Architecture
+
 ```
-User Input → Lambda Function → External Airline API → DynamoDB → GraphQL API → Frontend
+User Input → Frontend Form → /api/flight-lookup → Amadeus API
+                                                   ↓
+DynamoDB ← Save Flight Data ← Enriched Response ←
 ```
+
+#### Amadeus Integration
+- **Test Environment:** 500 free API calls/month
+- **Production Cost:** ~$0.003 per API call
+- **Supported Airlines:** AS, UA (limited AA, DL in test)
+- **Data Available:** Times, airports, terminals, aircraft type
 
 ## 🔧 Development
 
 ### Environment Variables
-Create a `.env.local` file for local development:
+Create a `.env` file in the root directory:
 ```env
-# Add any local environment variables here
+# Amadeus API Credentials
+AMADEUS_CLIENT_ID=your_client_id_here
+AMADEUS_CLIENT_SECRET=your_client_secret_here
 ```
+
+Get your Amadeus credentials at: https://developers.amadeus.com/
 
 ### AWS Configuration
 The project uses AWS Amplify Gen 2. Configuration files:
@@ -160,9 +176,16 @@ The project uses AWS Amplify Gen 2. Configuration files:
 
 ## 📚 Documentation
 
+### Project Documentation
+- [Session Summary](./context/session-summary.md) - Latest development session overview
+- [Amadeus Integration Guide](./context/amadeus-integration.md) - Flight API integration details
+- [UI/UX Improvements](./context/ui-improvements.md) - Recent interface enhancements
 - [Amplify Outputs README](./amplify-outputs-readme.md) - DynamoDB table names and AWS resource details
+
+### External Documentation
 - [AWS Amplify Gen 2 Docs](https://docs.amplify.aws/gen2)
 - [Next.js Documentation](https://nextjs.org/docs)
+- [Amadeus API Documentation](https://developers.amadeus.com/)
 
 ## 🤝 Contributing
 
@@ -185,18 +208,22 @@ For issues or questions, please contact the development team.
 
 ---
 
-## ⚠️ Current Deployment Status
+## ✅ Current Status
 
-**Status:** 🔴 Sandbox Deleted - Requires Fresh Deployment
+**Status:** 🟢 Development Active
 
-**Last Updated:** September 9, 2025
+**Last Updated:** September 10, 2025
 
-### Known Issues
-- Cognito UserPool attribute conflicts prevent sandbox updates
-- Sandbox was manually deleted via CloudFormation due to deployment failures
-- Fresh deployment required for development
+### Recent Updates
+- ✅ Amadeus flight API integration complete
+- ✅ My Trips navigation implemented
+- ✅ Flight form UI/UX improvements
+- ✅ Real-time flight data lookup working
+- ✅ Sandbox deployment stable
 
-### Next Steps
-1. Run `npm run sandbox` for fresh deployment
-2. Monitor for any UserPool attribute errors
-3. If errors occur, sandbox recreation will be required (deletes all user data)
+### What's Working
+- User authentication and trip creation
+- Real-time flight lookup (AS, UA airlines in test)
+- Trip collaboration with share codes
+- Flight management with auto-populate
+- My Trips view and navigation

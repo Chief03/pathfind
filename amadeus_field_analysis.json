@@ -1,0 +1,298 @@
+{
+  "flight_offers": {
+    "type": "flight-offer",
+    "id": "1",
+    "source": "GDS",
+    "instantTicketingRequired": false,
+    "nonHomogeneous": false,
+    "oneWay": false,
+    "isUpsellOffer": false,
+    "lastTicketingDate": "2025-09-10",
+    "lastTicketingDateTime": "2025-09-10",
+    "numberOfBookableSeats": 7,
+    "itineraries": [
+      {
+        "duration": "PT9H37M",
+        "segments": [
+          {
+            "departure": {
+              "iataCode": "JFK",
+              "terminal": "7",
+              "at": "2025-09-11T16:00:00"
+            },
+            "arrival": {
+              "iataCode": "SEA",
+              "at": "2025-09-11T19:25:00"
+            },
+            "carrierCode": "AS",
+            "number": "31",
+            "aircraft": {
+              "code": "73J"
+            },
+            "operating": {
+              "carrierCode": "AS"
+            },
+            "duration": "PT6H25M",
+            "id": "1",
+            "numberOfStops": 0,
+            "blacklistedInEU": false
+          },
+          {
+            "departure": {
+              "iataCode": "SEA",
+              "at": "2025-09-11T20:05:00"
+            },
+            "arrival": {
+              "iataCode": "ONT",
+              "terminal": "2",
+              "at": "2025-09-11T22:37:00"
+            },
+            "carrierCode": "AS",
+            "number": "1040",
+            "aircraft": {
+              "code": "73J"
+            },
+            "operating": {
+              "carrierCode": "AS"
+            },
+            "duration": "PT2H32M",
+            "id": "2",
+            "numberOfStops": 0,
+            "blacklistedInEU": false
+          }
+        ]
+      }
+    ],
+    "price": {
+      "currency": "EUR",
+      "total": "240.79",
+      "base": "204.00",
+      "fees": [
+        {
+          "amount": "0.00",
+          "type": "SUPPLIER"
+        },
+        {
+          "amount": "0.00",
+          "type": "TICKETING"
+        }
+      ],
+      "grandTotal": "240.79"
+    },
+    "pricingOptions": {
+      "fareType": [
+        "PUBLISHED"
+      ],
+      "includedCheckedBagsOnly": false
+    },
+    "validatingAirlineCodes": [
+      "AS"
+    ],
+    "travelerPricings": [
+      {
+        "travelerId": "1",
+        "fareOption": "STANDARD",
+        "travelerType": "ADULT",
+        "price": {
+          "currency": "EUR",
+          "total": "240.79",
+          "base": "204.00"
+        },
+        "fareDetailsBySegment": [
+          {
+            "segmentId": "1",
+            "cabin": "ECONOMY",
+            "fareBasis": "NH0OAJBN",
+            "brandedFare": "SV",
+            "brandedFareLabel": "SAVER",
+            "class": "X",
+            "includedCheckedBags": {
+              "quantity": 0
+            },
+            "includedCabinBags": {
+              "quantity": 2
+            },
+            "amenities": [
+              {
+                "description": "STANDARD PIECE MAX 50LB 62LI",
+                "isChargeable": true,
+                "amenityType": "BAGGAGE",
+                "amenityProvider": {
+                  "name": "BrandedFare"
+                }
+              },
+              {
+                "description": "MEAL 1",
+                "isChargeable": true,
+                "amenityType": "MEAL",
+                "amenityProvider": {
+                  "name": "BrandedFare"
+                }
+              },
+              {
+                "description": "110V AC POWER",
+                "isChargeable": false,
+                "amenityType": "ENTERTAINMENT",
+                "amenityProvider": {
+                  "name": "BrandedFare"
+                }
+              },
+              {
+                "description": "USB POWER",
+                "isChargeable": false,
+                "amenityType": "ENTERTAINMENT",
+                "amenityProvider": {
+                  "name": "BrandedFare"
+                }
+              }
+            ]
+          },
+          {
+            "segmentId": "2",
+            "cabin": "ECONOMY",
+            "fareBasis": "NH0OAJBN",
+            "brandedFare": "SV",
+            "brandedFareLabel": "SAVER",
+            "class": "X",
+            "includedCheckedBags": {
+              "quantity": 0
+            },
+            "includedCabinBags": {
+              "quantity": 2
+            },
+            "amenities": [
+              {
+                "description": "STANDARD PIECE MAX 50LB 62LI",
+                "isChargeable": true,
+                "amenityType": "BAGGAGE",
+                "amenityProvider": {
+                  "name": "BrandedFare"
+                }
+              },
+              {
+                "description": "MEAL 1",
+                "isChargeable": true,
+                "amenityType": "MEAL",
+                "amenityProvider": {
+                  "name": "BrandedFare"
+                }
+              },
+              {
+                "description": "110V AC POWER",
+                "isChargeable": false,
+                "amenityType": "ENTERTAINMENT",
+                "amenityProvider": {
+                  "name": "BrandedFare"
+                }
+              },
+              {
+                "description": "USB POWER",
+                "isChargeable": false,
+                "amenityType": "ENTERTAINMENT",
+                "amenityProvider": {
+                  "name": "BrandedFare"
+                }
+              }
+            ]
+          }
+        ]
+      }
+    ]
+  },
+  "schedule": [
+    {
+      "type": "DatedFlight",
+      "scheduledDepartureDate": "2025-09-11",
+      "flightDesignator": {
+        "carrierCode": "AA",
+        "flightNumber": 1
+      },
+      "flightPoints": [
+        {
+          "iataCode": "JFK",
+          "departure": {
+            "timings": [
+              {
+                "qualifier": "STD",
+                "value": "2025-09-11T07:29-04:00"
+              }
+            ]
+          }
+        },
+        {
+          "iataCode": "LAX",
+          "arrival": {
+            "timings": [
+              {
+                "qualifier": "STA",
+                "value": "2025-09-11T10:26-07:00"
+              }
+            ]
+          }
+        }
+      ],
+      "segments": [
+        {
+          "boardPointIataCode": "JFK",
+          "offPointIataCode": "LAX",
+          "scheduledSegmentDuration": "PT5H57M",
+          "partnership": {
+            "operatingFlight": {
+              "carrierCode": "AT",
+              "flightNumber": 5034
+            }
+          }
+        }
+      ],
+      "legs": [
+        {
+          "boardPointIataCode": "JFK",
+          "offPointIataCode": "LAX",
+          "aircraftEquipment": {
+            "aircraftType": "32B"
+          },
+          "scheduledLegDuration": "PT5H57M"
+        }
+      ]
+    }
+  ],
+  "airport": {
+    "type": "location",
+    "subType": "AIRPORT",
+    "name": "JOHN F KENNEDY INTL",
+    "detailedName": "NEW YORK/NY/US:JOHN F KENNEDY",
+    "id": "AJFK",
+    "self": {
+      "href": "https://test.api.amadeus.com/v1/reference-data/locations/AJFK",
+      "methods": [
+        "GET"
+      ]
+    },
+    "timeZoneOffset": "-04:00",
+    "iataCode": "JFK",
+    "geoCode": {
+      "latitude": 40.63973,
+      "longitude": -73.77861
+    },
+    "address": {
+      "cityName": "NEW YORK",
+      "cityCode": "NYC",
+      "countryName": "UNITED STATES OF AMERICA",
+      "countryCode": "US",
+      "stateCode": "NY",
+      "regionCode": "NAMER"
+    },
+    "analytics": {
+      "travelers": {
+        "score": 35
+      }
+    }
+  },
+  "airline": {
+    "type": "airline",
+    "iataCode": "AA",
+    "icaoCode": "AAL",
+    "businessName": "AMERICAN AIRLINES",
+    "commonName": "AMERICAN AIRLINES"
+  }
+}

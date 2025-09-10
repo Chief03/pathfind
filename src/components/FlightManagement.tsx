@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react'
 import { generateClient } from 'aws-amplify/data'
-import { parseFlightNumber, lookupFlight } from '@/lib/flightLookup'
+// Removed old mock flight lookup - now using real Amadeus API
 import { useActivityTracker } from '@/contexts/ActivityTracker'
 import type { Schema } from '../../amplify/data/resource'
 
@@ -94,21 +94,51 @@ export default function FlightManagement({ tripId, tripData, onFlightsUpdate }: 
     
     setSearchingFlight(true)
     try {
-      const flightInfo = await lookupFlight(
-        flightForm.flightNumber,
-        flightForm.departureTime || new Date().toISOString().split('T')[0]
-      )
+      // Call our API route instead of the old mock function
+      const response = await fetch('/api/flight-lookup', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          flightNumber: flightForm.flightNumber,
+          date: flightForm.departureTime?.split('T')[0] || null,
+        }),
+      })
       
-      if (flightInfo) {
+      if (!response.ok) {
+        const error = await response.json()
+        console.error('Flight lookup failed:', error)
+        alert(error.details || 'Could not find flight information. Please check the flight number and try again.')
+        return
+      }
+      
+      const data = await response.json()
+      
+      if (data.success && data.flightData) {
+        const flight = data.flightData
+        
+        // Update form with flight data
         setFlightForm(prev => ({
           ...prev,
-          airline: flightInfo.airline || prev.airline,
-          departureAirport: flightInfo.departureAirport?.match(/\(([A-Z]{3})\)/)?.[1] || prev.departureAirport,
-          arrivalAirport: flightInfo.arrivalAirport?.match(/\(([A-Z]{3})\)/)?.[1] || prev.arrivalAirport,
+          airline: flight.airline,
+          departureAirport: flight.departureAirport.code,
+          arrivalAirport: flight.arrivalAirport.code,
+          departureTime: flight.departureTime.replace(':00Z', '').replace('Z', ''), // Convert to datetime-local format
+          arrivalTime: flight.arrivalTime.replace(':00Z', '').replace('Z', ''), // Convert to datetime-local format
+          terminal: flight.terminal || prev.terminal,
+          // Keep user's existing data for these fields
+          confirmationCode: prev.confirmationCode,
+          gate: prev.gate,
+          notes: prev.notes ? `${prev.notes}\n\nAircraft: ${flight.aircraft || 'Unknown'}` : `Aircraft: ${flight.aircraft || 'Unknown'}`,
         }))
+        
+        // Show success message
+        console.log('✅ Flight data loaded:', flight)
       }
     } catch (error) {
       console.error('Error looking up flight:', error)
+      alert('An error occurred while looking up the flight. Please try again.')
     } finally {
       setSearchingFlight(false)
     }

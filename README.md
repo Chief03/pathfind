@@ -14,10 +14,11 @@ PathFind solves the chaos of group travel planning by providing a centralized pl
 - Role-based access (creator, participant, viewer)
 
 ### ✈️ **Flight Management**
-- Integration with airline APIs for real-time flight data
+- **NEW:** Real-time flight data via Amadeus GDS integration
+- **NEW:** Automatic flight lookup - just enter flight number (e.g., "AA123")
+- Auto-populate airline, airports, times, and terminals
 - Track arrival/departure flights for all participants
 - Store personal details (seat numbers, confirmation codes)
-- Automatic flight lookup by flight number
 
 ### 📅 **Itinerary Planning**
 - Day-by-day event scheduling
@@ -50,11 +51,13 @@ PathFind solves the chaos of group travel planning by providing a centralized pl
 - **Styling:** Tailwind CSS
 - **UI Components:** AWS Amplify UI React
 - **State Management:** React Context API
+- **API Integration:** Amadeus GDS for flight data
 
 ### Backend (AWS Amplify Gen 2)
 - **API:** AWS AppSync (GraphQL)
 - **Database:** DynamoDB
 - **Authentication:** AWS Cognito
+- **External APIs:** Amadeus Flight API
 - **Functions:** AWS Lambda
 - **Storage:** Amazon S3
 - **Real-time:** AppSync Subscriptions
@@ -112,7 +115,7 @@ pathfind/
    - Watch for any Cognito UserPool attribute errors
    
    ⚠️ **Important Notes:**
-   - **Current Status:** Sandbox has been deleted due to Cognito UserPool attribute conflicts
+   - Sandbox deployment is currently stable and working
    - If you encounter UserPool attribute errors during updates, you'll need to delete and recreate the sandbox
    - UserPool attributes are immutable after creation - changes require full recreation
    - Use `npm run sandbox:delete` or manual CloudFormation stack deletion if needed
@@ -148,9 +151,18 @@ npm run sandbox:delete # Delete Amplify sandbox
   - `maxTrips`: Maximum trips allowed (5 for free, unlimited for premium)
 
 ### Flight Service Architecture
+
 ```
-User Input → Lambda Function → External Airline API → DynamoDB → GraphQL API → Frontend
+User Input → Frontend Form → /api/flight-lookup → Amadeus API
+                                                   ↓
+DynamoDB ← Save Flight Data ← Enriched Response ←
 ```
+
+#### Amadeus Integration
+- **Test Environment:** 500 free API calls/month
+- **Production Cost:** ~$0.003 per API call
+- **Supported Airlines:** AS, UA (limited AA, DL in test)
+- **Data Available:** Times, airports, terminals, aircraft type
 
 ### Subscription & Trip Limit Architecture
 ```
@@ -175,10 +187,14 @@ Trip Deletion → delete-trip Lambda → DynamoDB Trip Delete → UserProfile Tr
 - Extended collaboration features
 
 ### Environment Variables
-Create a `.env.local` file for local development:
+Create a `.env` file in the root directory:
 ```env
-# Add any local environment variables here
+# Amadeus API Credentials
+AMADEUS_CLIENT_ID=your_client_id_here
+AMADEUS_CLIENT_SECRET=your_client_secret_here
 ```
+
+Get your Amadeus credentials at: https://developers.amadeus.com/
 
 ### AWS Configuration
 The project uses AWS Amplify Gen 2. Configuration files:
@@ -194,9 +210,16 @@ The project uses AWS Amplify Gen 2. Configuration files:
 
 ## 📚 Documentation
 
+### Project Documentation
+- [Session Summary](./context/session-summary.md) - Latest development session overview
+- [Amadeus Integration Guide](./context/amadeus-integration.md) - Flight API integration details
+- [UI/UX Improvements](./context/ui-improvements.md) - Recent interface enhancements
 - [Amplify Outputs README](./amplify-outputs-readme.md) - DynamoDB table names and AWS resource details
+
+### External Documentation
 - [AWS Amplify Gen 2 Docs](https://docs.amplify.aws/gen2)
 - [Next.js Documentation](https://nextjs.org/docs)
+- [Amadeus API Documentation](https://developers.amadeus.com/)
 
 ## 🤝 Contributing
 
@@ -219,29 +242,40 @@ For issues or questions, please contact the development team.
 
 ---
 
-## ⚠️ Current Deployment Status
+## ✅ Current Status
 
-**Status:** 🟡 Ready for Fresh Deployment with New Features
+**Status:** 🟢 Development Active with New UI Enhancements
 
-**Last Updated:** September 10, 2025
+**Last Updated:** September 11, 2025
 
-### Recent Changes
-- ✅ Added subscription management system
-- ✅ Implemented trip limit validation (5 trips for free users)
-- ✅ Created trip deletion functionality with count updates
-- ✅ Enhanced My Trips page with better management
-- ✅ Added subscription upgrade modal
+### Recent Updates (v2.2.0)
+- ✅ **NEW**: Interactive landing-page style trip overview with animations
+- ✅ **NEW**: Amadeus flight API integration with real-time lookup
+- ✅ **NEW**: Quick Actions buttons connecting to navigation tabs
+- ✅ Enhanced authentication modal (Sign In/Create Account fixed)
+- ✅ Modern gradient cards with hover effects and smooth transitions
+- ✅ Interactive progress tracker with expandable checklist
+- ✅ Trip limit validation system (5 trips for free users)
+- ✅ My Trips navigation and management functionality
 
-### Known Issues
-- Cognito UserPool attribute conflicts prevent sandbox updates
-- Fresh deployment required for development with new UserProfile fields
+### What's Working
+- Modern, interactive trip overview interface
+- User authentication and trip creation
+- Real-time flight lookup (AS, UA airlines in test)
+- Trip collaboration with share codes
+- Flight management with auto-populate data
+- My Trips view and navigation
+- Subscription management system
+- Quick Actions navigation buttons
 
-### Next Steps
-1. Run `npm run sandbox` for fresh deployment
-2. Monitor for any UserPool attribute errors
-3. New UserProfile fields will be created: `subscriptionType`, `tripCount`, `maxTrips`
+### Recent UI/UX Improvements
+- **Hero Section**: Gradient backgrounds with animated elements
+- **Progress Tracking**: Visual progress bar with completion percentage
+- **Interactive Cards**: Hover effects and smooth animations
+- **Quick Actions**: Functional buttons for rapid navigation
+- **Modern Design**: Landing-page inspired interface
 
-## 📝 Recent Updates (v2.1.0)
+## 📝 Previous Updates (v2.1.0)
 
 ### 🚀 **Trip Limit & Subscription System**
 - **Free Plan**: Users limited to 5 trips maximum
@@ -249,12 +283,6 @@ For issues or questions, please contact the development team.
 - **Smart Validation**: Trip creation blocked when limit reached
 - **Upgrade Prompts**: Beautiful modal with pricing and features
 - **Trip Management**: Delete functionality with proper count updates
-
-### 🎯 **Enhanced User Experience**
-- **My Trips Redesign**: Better trip cards with delete buttons
-- **Subscription Status**: Visual badges showing Free/Premium status
-- **Trip Counter**: Real-time display of current/max trips
-- **Confirmation Dialogs**: Safe trip deletion with user confirmation
 
 ### ⚙️ **Backend Improvements**
 - **create-trip Lambda**: Added trip limit validation logic

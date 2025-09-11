@@ -35,6 +35,13 @@ PathFind solves the chaos of group travel planning by providing a centralized pl
 - Category-based budgeting
 - Per-person or group pot tracking modes
 
+### 🚀 **Subscription & Trip Management**
+- **Free Plan**: Up to 5 trips per user
+- **Premium Plan**: Unlimited trips + advanced features
+- Smart trip limit validation with upgrade prompts
+- Easy trip deletion and management in My Trips page
+- Real-time trip count tracking
+
 ## 🛠️ Tech Stack
 
 ### Frontend
@@ -66,6 +73,10 @@ pathfind/
 │   ├── auth/            # Cognito authentication config
 │   ├── data/            # GraphQL schema and DynamoDB models
 │   ├── functions/       # Lambda functions
+│   │   ├── create-trip/     # Trip creation with limit validation
+│   │   ├── delete-trip/     # Trip deletion with count updates
+│   │   ├── fetch-events/    # Event API integration
+│   │   └── validate-destination/ # Location validation
 │   └── storage/         # S3 storage config
 ├── public/              # Static assets
 └── logs/               # Development logs (gitignored)
@@ -131,14 +142,37 @@ npm run sandbox:delete # Delete Amplify sandbox
 - **ItineraryItem** - Activities and events
 - **Place** - Saved locations
 - **Event** - External event data from APIs
-- **UserProfile** - Extended user information
+- **UserProfile** - Extended user information with subscription management
+  - `subscriptionType`: 'free' | 'premium'
+  - `tripCount`: Current number of trips created
+  - `maxTrips`: Maximum trips allowed (5 for free, unlimited for premium)
 
 ### Flight Service Architecture
 ```
 User Input → Lambda Function → External Airline API → DynamoDB → GraphQL API → Frontend
 ```
 
+### Subscription & Trip Limit Architecture
+```
+Trip Creation → create-trip Lambda → Trip Count Validation → UserProfile Check → Success/Upgrade Modal
+Trip Deletion → delete-trip Lambda → DynamoDB Trip Delete → UserProfile Trip Count Update
+```
+
 ## 🔧 Development
+
+### Subscription Plans
+
+#### 🆓 **Free Plan**
+- Up to 5 trips per user
+- Basic trip planning features
+- Standard support
+
+#### ⭐ **Premium Plan ($9.99/month)**
+- Unlimited trips
+- Priority customer support
+- Advanced trip analytics
+- Custom trip templates
+- Extended collaboration features
 
 ### Environment Variables
 Create a `.env.local` file for local development:
@@ -187,16 +221,43 @@ For issues or questions, please contact the development team.
 
 ## ⚠️ Current Deployment Status
 
-**Status:** 🔴 Sandbox Deleted - Requires Fresh Deployment
+**Status:** 🟡 Ready for Fresh Deployment with New Features
 
-**Last Updated:** September 9, 2025
+**Last Updated:** September 10, 2025
+
+### Recent Changes
+- ✅ Added subscription management system
+- ✅ Implemented trip limit validation (5 trips for free users)
+- ✅ Created trip deletion functionality with count updates
+- ✅ Enhanced My Trips page with better management
+- ✅ Added subscription upgrade modal
 
 ### Known Issues
 - Cognito UserPool attribute conflicts prevent sandbox updates
-- Sandbox was manually deleted via CloudFormation due to deployment failures
-- Fresh deployment required for development
+- Fresh deployment required for development with new UserProfile fields
 
 ### Next Steps
 1. Run `npm run sandbox` for fresh deployment
 2. Monitor for any UserPool attribute errors
-3. If errors occur, sandbox recreation will be required (deletes all user data)
+3. New UserProfile fields will be created: `subscriptionType`, `tripCount`, `maxTrips`
+
+## 📝 Recent Updates (v2.1.0)
+
+### 🚀 **Trip Limit & Subscription System**
+- **Free Plan**: Users limited to 5 trips maximum
+- **Premium Plan**: Unlimited trips + advanced features
+- **Smart Validation**: Trip creation blocked when limit reached
+- **Upgrade Prompts**: Beautiful modal with pricing and features
+- **Trip Management**: Delete functionality with proper count updates
+
+### 🎯 **Enhanced User Experience**
+- **My Trips Redesign**: Better trip cards with delete buttons
+- **Subscription Status**: Visual badges showing Free/Premium status
+- **Trip Counter**: Real-time display of current/max trips
+- **Confirmation Dialogs**: Safe trip deletion with user confirmation
+
+### ⚙️ **Backend Improvements**
+- **create-trip Lambda**: Added trip limit validation logic
+- **delete-trip Lambda**: New function for proper trip deletion
+- **UserProfile Model**: Extended with subscription fields
+- **Real-time Updates**: Trip counts updated immediately

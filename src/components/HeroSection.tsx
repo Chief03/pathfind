@@ -756,29 +756,46 @@ export default function HeroSection({ onTripCreated }: HeroSectionProps) {
             >
               ✕
             </button>
-            <Authenticator>
+            <Authenticator
+              hideSignUp={false}
+            >
               {({ signOut, user: authUser }) => {
                 // Once authenticated, close modal and submit form
-                if (authUser && !user) {
+                if (authUser) {
                   setTimeout(() => {
                     setShowAuthModal(false)
-                    handleSubmit(new Event('submit') as any)
-                  }, 100)
+                    // Trigger form submission after authentication
+                    if (formData.destination && formData.startDate && formData.endDate) {
+                      const form = document.querySelector('form')
+                      if (form) {
+                        form.dispatchEvent(new Event('submit', { bubbles: true, cancelable: true }))
+                      }
+                    }
+                  }, 500)
+                  return (
+                    <div className="text-center p-4">
+                      <div className="mb-4">
+                        <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-3">
+                          <svg className="w-8 h-8 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                          </svg>
+                        </div>
+                        <p className="text-lg font-semibold">Welcome back, {authUser.username}!</p>
+                        <p className="text-gray-600 text-sm">You're now signed in</p>
+                      </div>
+                      <button 
+                        onClick={() => {
+                          setShowAuthModal(false)
+                        }}
+                        className="w-full py-3 bg-gradient-to-r from-purple-600 to-indigo-600 text-white rounded-xl font-semibold hover:from-purple-700 hover:to-indigo-700 transition-all"
+                      >
+                        Continue Planning Your Trip
+                      </button>
+                    </div>
+                  )
                 }
-                return authUser ? (
-                  <div className="text-center">
-                    <p className="mb-4">Welcome {authUser.username}!</p>
-                    <button 
-                      onClick={() => {
-                        setShowAuthModal(false)
-                        handleSubmit(new Event('submit') as any)
-                      }}
-                      className="w-full py-3 bg-gradient-to-r from-purple-600 to-indigo-600 text-white rounded-xl font-semibold hover:from-purple-700 hover:to-indigo-700 transition-all"
-                    >
-                      Continue
-                    </button>
-                  </div>
-                ) : <></>
+                // Return nothing to let Authenticator show its default UI
+                return <></>
               }}
             </Authenticator>
           </div>

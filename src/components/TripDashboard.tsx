@@ -242,6 +242,7 @@ export default function TripDashboard({ tripData: initialTripData }: TripDashboa
             <TripOverviewModern 
               tripData={tripData} 
               onTripUpdate={(updatedTrip) => setTripData(updatedTrip)}
+              onTabChange={(tab) => setActiveTab(tab)}
               flightCount={flights.length}
               eventCount={itinerary.length}
               placeCount={places.length}

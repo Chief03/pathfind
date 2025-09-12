@@ -246,17 +246,17 @@ For issues or questions, please contact the development team.
 
 **Status:** 🟢 Development Active with New UI Enhancements
 
-**Last Updated:** September 11, 2025
+**Last Updated:** September 11, 2025 (8:45 PM PST)
 
-### Recent Updates (v2.2.0)
-- ✅ **NEW**: Interactive landing-page style trip overview with animations
-- ✅ **NEW**: Amadeus flight API integration with real-time lookup
-- ✅ **NEW**: Quick Actions buttons connecting to navigation tabs
-- ✅ Enhanced authentication modal (Sign In/Create Account fixed)
+### Recent Updates (v2.2.1) - UI Polish & Bug Fixes
+- ✅ **FIXED**: Removed duplicate trip header in dashboard view
+- ✅ **FIXED**: Authentication modal now properly shows Sign In/Create Account UI
+- ✅ **FIXED**: Quick Actions buttons now correctly navigate to respective tabs
+- ✅ **REMOVED**: Unnecessary "Your adventure awaits" tagline from overview
+- ✅ **MERGED**: Successfully integrated Amadeus flight API from upstream
+- ✅ Interactive landing-page style trip overview with animations
 - ✅ Modern gradient cards with hover effects and smooth transitions
 - ✅ Interactive progress tracker with expandable checklist
-- ✅ Trip limit validation system (5 trips for free users)
-- ✅ My Trips navigation and management functionality
 
 ### What's Working
 - Modern, interactive trip overview interface

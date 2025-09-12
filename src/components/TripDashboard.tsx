@@ -197,23 +197,6 @@ export default function TripDashboard({ tripData: initialTripData }: TripDashboa
   return (
     <div className="app-container">
       <div className="max-w-7xl mx-auto px-4 py-8">
-        {/* Trip Header */}
-        <div className="bg-white rounded-xl shadow-md p-6 mb-8">
-          <div className="flex justify-between items-start">
-            <div>
-              <h1 className="text-3xl font-bold text-gray-900">
-                {tripData?.name || 'Your Trip'}
-              </h1>
-              <p className="text-gray-600 mt-2">
-                {tripData?.destinationCity} • {tripData?.startDate} to {tripData?.endDate}
-              </p>
-            </div>
-            <div className="text-right">
-              <p className="text-sm text-gray-500">Share Code</p>
-              <p className="text-xl font-mono font-bold">{tripData?.shareCode}</p>
-            </div>
-          </div>
-        </div>
 
         {/* Tabs */}
         <div className="bg-white rounded-xl shadow-md mb-6">
